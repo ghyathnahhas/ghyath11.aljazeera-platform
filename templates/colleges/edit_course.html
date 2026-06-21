@@ -1,0 +1,31 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "تعديل مقرر" if lang=="ar" else "Edit Course" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "تعديل" if lang=="ar" else "Edit" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-edit"></i> {{ "تعديل المقرر الدراسي" if lang=="ar" else "Edit Course" }}</h2></div>
+        <form method="POST" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label>{{ "اسم المقرر" if lang=="ar" else "Name" }} <span class="required">*</span></label><input type="text" name="name" class="form-control input-3d" value="{{ course.name }}" required></div>
+            <div class="form-group"><label>{{ "رمز المقرر" if lang=="ar" else "Code" }}</label><input type="text" name="code" class="form-control input-3d" value="{{ course.code or "" }}"></div>
+            <div class="form-group"><label>{{ "الوصف" if lang=="ar" else "Description" }}</label><textarea name="description" class="form-control input-3d" rows="4">{{ course.description or "" }}</textarea></div>
+            {% if teachers %}
+            <div class="form-group"><label>{{ "المدرس" if lang=="ar" else "Teacher" }}</label>
+                <select name="teacher_id" class="form-control input-3d">
+                    <option value="">-- {{ "اختر المدرس" if lang=="ar" else "Select Teacher" }} --</option>
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}" {% if course.teacher_id == t.id %}selected{% endif %}>{{ t.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-save"></i> {{ "حفظ" if lang=="ar" else "Save" }}</button>
+                <a href="{{ url_for("course_detail", id=course.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+

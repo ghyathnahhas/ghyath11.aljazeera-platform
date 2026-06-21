@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ "إضافة سؤال" if lang=="ar" else "Add Question" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "إضافة سؤال" if lang=="ar" else "Add Question" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-plus-circle"></i> {{ "إضافة سؤال جديد" if lang=="ar" else "Add New Question" }}</h2></div>
+        <form method="POST" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label>{{ "نص السؤال" if lang=="ar" else "Question" }} <span class="required">*</span></label><textarea name="question_text" class="form-control input-3d" rows="3" required></textarea></div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "نوع السؤال" if lang=="ar" else "Type" }}</label><select name="question_type" class="form-control input-3d" id="qType"><option value="mcq">MCQ</option><option value="tf">T/F</option><option value="essay">Essay</option></select></div>
+                <div class="form-group"><label>{{ "العلامة" if lang=="ar" else "Mark" }}</label><input type="number" name="marks" class="form-control input-3d" value="{{ test.per_question_mark }}" step="0.5"></div>
+            </div>
+            <div id="optionsArea">
+                <div class="form-row">
+                    <div class="form-group"><label>الخيار أ</label><input type="text" name="options" class="form-control input-3d"></div>
+                    <div class="form-group"><label>الخيار ب</label><input type="text" name="options" class="form-control input-3d"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>الخيار ج</label><input type="text" name="options" class="form-control input-3d"></div>
+                    <div class="form-group"><label>الخيار د</label><input type="text" name="options" class="form-control input-3d"></div>
+                </div>
+            </div>
+            <div class="form-group"><label>{{ "الإجابة الصحيحة" if lang=="ar" else "Correct Answer" }}</label><input type="text" name="correct_answer" class="form-control input-3d"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-save"></i> {{ "حفظ" if lang=="ar" else "Save" }}</button>
+                <a href="{{ url_for("test_questions", id=test.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("test_questions", id=test.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById("qType").addEventListener("change",function(){
+    document.getElementById("optionsArea").style.display=this.value==="mcq"?"block":"none";
+});
+</script>
+{% endblock %}

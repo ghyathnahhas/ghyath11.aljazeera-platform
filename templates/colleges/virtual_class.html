@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}الغرفة الافتراضية - {{ course.name }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <span>{{ course.name }}</span>
+            <span>الغرفة الافتراضية</span>
+        </div>
+    </div>
+
+    <div class="dashboard-header">
+        <h1><i class="fas fa-video"></i> الغرفة الافتراضية: {{ course.name }}</h1>
+    </div>
+
+    <!-- حاوية الفيديو Jitsi -->
+    <div class="dash-card card-3d" style="padding: 0; overflow: hidden; height: 75vh;">
+        <div id="jitsi-container" style="width: 100%; height: 100%;"></div>
+    </div>
+
+</section>
+
+<!-- استدعاء مكتبة Jitsi Meet الخارجية -->
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const domain = 'meet.jit.si';
+        const options = {
+            roomName: '{{ room_name }}',
+            width: '100%',
+            height: '100%',
+            parentNode: document.getElementById('jitsi-container'),
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: false,
+                // تفعيل أدوات الشرح والسبورة
+                whiteboard: {
+                    enabled: true
+                }
+            },
+            interfaceConfigOverwrite: {
+                filmStripOnly: false,
+                SHOW_JITSI_WATERMARK: false,
+            },
+            userInfo: {
+                displayName: '{{ current_user.first_name }} {{ current_user.second_name }}',
+                // email: '{{ current_user.username }}@aljazeera.edu' // اختياري
+            }
+        };
+
+        // إنشاء الغرفة
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        // تعيين دور المستخدم (مدير = مدرس، مشارك = طالب)
+        api.addEventListener('participantRoleChanged', function(event) {
+            if (event.role === 'moderator') {
+                // المدرس يملك الصلاحيات الكاملة
+            } else {
+                // الطلاب يمكن تقييدهم إذا أراد المدرس ذلك من داخل واجهة Jitsi
+            }
+        });
+    });
+</script>
+{% endblock %}

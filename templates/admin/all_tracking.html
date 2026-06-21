@@ -1,0 +1,11 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "متابعة شاملة" if lang=="ar" else "All Tracking" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "متابعة شاملة" if lang=="ar" else "All Tracking" }}</span></div></div>
+    <div class="data-table-wrapper card-3d"><table class="data-table"><thead><tr><th>#</th><th>{{ "الطالب" if lang=="ar" else "Student" }}</th><th>{{ "المقرر" if lang=="ar" else "Course" }}</th><th>{{ "النشاط" if lang=="ar" else "Action" }}</th><th>{{ "التفاصيل" if lang=="ar" else "Details" }}</th><th>{{ "التاريخ" if lang=="ar" else "Date" }}</th></tr></thead>
+    <tbody>{% for t in tracking %}<tr><td>{{ loop.index }}</td><td>{{ t.user.full_name if t.user else "-" }}</td><td>{{ t.course.name if t.course else "-" }}</td><td><span class="type-badge {{ t.action_type }}">{{ t.action_type }}</span></td><td>{{ t.action_details[:80] if t.action_details else "-" }}</td><td>{{ t.created_at.strftime("%Y-%m-%d %H:%M") }}</td></tr>{% endfor %}</tbody></table>
+    {% if not tracking %}<div class="empty-state"><i class="fas fa-route"></i><p>{{ "لا توجد نشاطات" if lang=="ar" else "No tracking" }}</p></div>{% endif %}</div>
+    <div class="action-bar"><a href="{{ url_for("admin_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

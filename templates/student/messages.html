@@ -1,0 +1,27 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "الرسائل التنبيهية" if lang=="ar" else "Messages" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "الرسائل التنبيهية" if lang=="ar" else "Messages" }}</span></div></div>
+    <div class="messages-list">
+        {% for m in messages %}
+        <div class="message-card card-3d {% if not m.is_read %}unread{% endif %} {% if m.priority == "urgent" %}urgent-msg{% elif m.priority == "warning" %}warning-msg{% endif %}">
+            <div class="msg-header">
+                <span class="msg-type-badge {{ m.msg_type }}">{{ m.msg_type }}</span>
+                <span class="priority-indicator {{ m.priority }}">{{ m.priority }}</span>
+                <span class="msg-date">{{ m.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+            </div>
+            {% if m.title %}<h4 class="msg-title">{{ m.title }}</h4>{% endif %}
+            <p class="msg-body">{{ m.message }}</p>
+            {% if m.deadline %}<div class="msg-deadline"><i class="fas fa-clock"></i> {{ "موعد التسليم: " if lang=="ar" else "Deadline: " }}{{ m.deadline.strftime("%Y-%m-%d %H:%M") }}</div>{% endif %}
+            {% if m.course %}<div class="msg-course"><i class="fas fa-book"></i> {{ m.course.name }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% if not messages %}<div class="empty-state"><i class="fas fa-envelope-open"></i><p>{{ "لا توجد رسائل" if lang=="ar" else "No messages" }}</p></div>{% endif %}
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("student_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

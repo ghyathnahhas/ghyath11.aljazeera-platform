@@ -1,0 +1,58 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "إجراء الاختبار" if lang=="ar" else "Take Test" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ url_for("student_tests") }}">{{ "الاختبارات" if lang=="ar" else "Tests" }}</a><span>{{ test.name }}</span></div></div>
+    <div class="detail-card card-3d">
+        <div class="detail-header">
+            <div class="detail-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="detail-title-area">
+                <h1>{{ test.name }}</h1>
+                <p>{{ "النوع: " if lang=="ar" else "Type: " }}<span class="type-badge {{ test.test_type }}">{{ test.test_type }}</span> | {{ "العلامة: " if lang=="ar" else "Mark: " }}{{ test.total_mark }} | {{ "المدة: " if lang=="ar" else "Duration: " }}{{ test.duration_minutes }} {{ "دقيقة" if lang=="ar" else "min" }}</p>
+                {% if test.deadline %}<p class="deadline-warning"><i class="fas fa-exclamation-triangle"></i> {{ "موعد التسليم: " if lang=="ar" else "Deadline: " }}{{ test.deadline.strftime("%Y-%m-%d %H:%M") }}</p>{% endif %}
+            </div>
+        </div>
+        <div class="detail-body">
+            <form method="POST" class="test-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% for q in questions %}
+                <div class="question-card card-3d">
+                    <div class="question-header">
+                        <span class="q-number">{{ "سؤال" if lang=="ar" else "Q" }} {{ loop.index }}</span>
+                        <span class="q-marks">{{ q.marks }} {{ "علامة" if lang=="ar" else "pts" }}</span>
+                        {% if q.ai_generated %}<span class="ai-badge"><i class="fas fa-robot"></i> AI</span>{% endif %}
+                    </div>
+                    <div class="question-text">{{ q.question_text }}</div>
+                    {% if q.question_type == "mcq" %}
+                    <div class="options-list">
+                        {% for opt in q.get_options() %}
+                        <label class="option-item input-3d">
+                            <input type="radio" name="q_{{ q.id }}" value="{{ opt }}">
+                            <span class="option-text">{{ opt }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% elif q.question_type == "tf" %}
+                    <div class="options-list">
+                        <label class="option-item input-3d"><input type="radio" name="q_{{ q.id }}" value="صح"><span>{{ "صح" if lang=="ar" else "True" }}</span></label>
+                        <label class="option-item input-3d"><input type="radio" name="q_{{ q.id }}" value="خطأ"><span>{{ "خطأ" if lang=="ar" else "False" }}</span></label>
+                    </div>
+                    {% elif q.question_type == "essay" %}
+                    <textarea name="q_{{ q.id }}" class="form-control input-3d" rows="5" placeholder="{{ "اكتب إجابتك هنا..." if lang=="ar" else "Write your answer here..." }}"></textarea>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="form-actions" style="margin-top:30px;">
+                    <button type="submit" class="btn btn-primary btn-3d btn-lg"><i class="fas fa-paper-plane"></i> {{ "تسليم الاختبار" if lang=="ar" else "Submit Test" }}</button>
+                    <a href="{{ url_for("student_tests") }}" class="btn btn-secondary btn-3d btn-lg"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("student_tests") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+

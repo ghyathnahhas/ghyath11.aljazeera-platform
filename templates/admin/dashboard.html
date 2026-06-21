@@ -1,0 +1,57 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "لوحة تحكم المدير" if lang=="ar" else "Admin Dashboard" }}{% endblock %}
+{% block content %}
+<section class="dashboard-section">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-tachometer-alt"></i> {{ "لوحة تحكم مدير المنصة" if lang=="ar" else "Admin Control Panel" }}</h1>
+    </div>
+    <div class="dashboard-stats">
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("admin_users") }}'">
+            <div class="dash-stat-icon users-icon"><i class="fas fa-users"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_users }}</span><span class="dash-stat-label">{{ "إجمالي المستخدمين" if lang=="ar" else "Total Users" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon students-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_students }}</span><span class="dash-stat-label">{{ "الطلاب" if lang=="ar" else "Students" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon teachers-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_teachers }}</span><span class="dash-stat-label">{{ "المدرسين" if lang=="ar" else "Teachers" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("admin_tests") }}'">
+            <div class="dash-stat-icon tests-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_tests }}</span><span class="dash-stat-label">{{ "الاختبارات" if lang=="ar" else "Tests" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon courses-icon"><i class="fas fa-book"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_courses }}</span><span class="dash-stat-label">{{ "المقررات" if lang=="ar" else "Courses" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon lectures-icon"><i class="fas fa-video"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_lectures }}</span><span class="dash-stat-label">{{ "المحاضرات" if lang=="ar" else "Lectures" }}</span></div>
+        </div>
+    </div>
+    <div class="dashboard-grid">
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-user-clock"></i> {{ "آخر المستخدمين المسجلين" if lang=="ar" else "Recent Users" }}</h3></div>
+            <div class="dash-card-body">
+                <table class="data-table compact">
+                    <thead><tr><th>{{ "الاسم" if lang=="ar" else "Name" }}</th><th>{{ "نوع المستخدم" if lang=="ar" else "Type" }}</th><th>{{ "التاريخ" if lang=="ar" else "Date" }}</th></tr></thead>
+                    <tbody>{% for u in recent_users %}<tr><td>{{ u.full_name }}</td><td><span class="type-badge {{ u.user_type }}">{{ u.user_type }}</span></td><td>{{ u.created_at.strftime("%Y-%m-%d") }}</td></tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-bolt"></i> {{ "إجراءات سريعة" if lang=="ar" else "Quick Actions" }}</h3></div>
+            <div class="dash-card-body quick-actions">
+                <a href="{{ url_for("admin_add_user") }}" class="qa-btn"><i class="fas fa-user-plus"></i><span>{{ "إضافة مستخدم" if lang=="ar" else "Add User" }}</span></a>
+                <a href="{{ url_for("admin_upload_excel") }}" class="qa-btn"><i class="fas fa-file-excel"></i><span>{{ "استيراد Excel" if lang=="ar" else "Import Excel" }}</span></a>
+                <a href="{{ url_for("admin_add_test") }}" class="qa-btn"><i class="fas fa-plus-circle"></i><span>{{ "إضافة اختبار" if lang=="ar" else "Add Test" }}</span></a>
+                <a href="{{ url_for("admin_statistics") }}" class="qa-btn"><i class="fas fa-chart-bar"></i><span>{{ "الإحصائيات" if lang=="ar" else "Statistics" }}</span></a>
+                <a href="{{ url_for("admin_logo") }}" class="qa-btn"><i class="fas fa-image"></i><span>{{ "شعار الجامعة" if lang=="ar" else "Logo" }}</span></a>
+                <a href="{{ url_for("admin_backup") }}" class="qa-btn"><i class="fas fa-database"></i><span>{{ "نسخ احتياطي" if lang=="ar" else "Backup" }}</span></a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

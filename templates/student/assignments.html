@@ -1,0 +1,39 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "الواجبات والتمارين" if lang=="ar" else "Assignments" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "الواجبات والتمارين" if lang=="ar" else "Assignments" }}</span></div></div>
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>{{ "العنوان" if lang=="ar" else "Title" }}</th><th>{{ "المقرر" if lang=="ar" else "Course" }}</th><th>{{ "النوع" if lang=="ar" else "Type" }}</th><th>{{ "الأولوية" if lang=="ar" else "Priority" }}</th><th>{{ "موعد التسليم" if lang=="ar" else "Deadline" }}</th><th>{{ "إجراء" if lang=="ar" else "Action" }}</th></tr></thead>
+            <tbody>
+                {% for a in announcements %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ a.title or a.message[:60] }}</td>
+                    <td>{{ a.course.name if a.course else "-" }}</td>
+                    <td><span class="type-badge {{ a.msg_type }}">{{ a.msg_type }}</span></td>
+                    <td><span class="priority-badge {{ a.priority }}">{{ a.priority }}</span></td>
+                    <td>{{ a.deadline.strftime("%Y-%m-%d %H:%M") if a.deadline else "-" }}</td>
+                    <td>
+                        {% if a.msg_type == "homework" or a.msg_type == "exercise" %}
+                        <a href="{{ url_for("student_submit_assignment", id=a.id) }}" class="btn btn-sm btn-primary btn-3d"><i class="fas fa-paper-plane"></i> {{ "تسليم" if lang=="ar" else "Submit" }}</a>
+                        {% elif a.msg_type == "discussion" or a.msg_type == "forum" %}
+                        <a href="{{ url_for("student_discussion_reply", id=a.id) }}" class="btn btn-sm btn-info btn-3d"><i class="fas fa-reply"></i> {{ "رد" if lang=="ar" else "Reply" }}</a>
+                        {% elif a.msg_type == "quiz" or a.msg_type == "test" %}
+                        <a href="{{ url_for("student_submit_quiz", id=a.id) }}" class="btn btn-sm btn-warning btn-3d"><i class="fas fa-edit"></i> {{ "تسليم" if lang=="ar" else "Submit" }}</a>
+                        {% elif a.msg_type == "media" %}
+                        <a href="{{ url_for("student_discussion_reply", id=a.id) }}" class="btn btn-sm btn-success btn-3d"><i class="fas fa-photo-video"></i> {{ "تفاعل" if lang=="ar" else "Interact" }}</a>
+                        {% elif a.msg_type == "online" %}
+                        <a href="{{ url_for("student_discussion_reply", id=a.id) }}" class="btn btn-sm btn-info btn-3d"><i class="fas fa-globe"></i> Online</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not announcements %}<div class="empty-state"><i class="fas fa-tasks"></i><p>{{ "لا توجد واجبات" if lang=="ar" else "No assignments" }}</p></div>{% endif %}
+    </div>
+    <div class="action-bar"><a href="{{ url_for("student_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

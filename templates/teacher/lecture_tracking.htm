@@ -1,0 +1,12 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "تفاعل المحاضرات" if lang=="ar" else "Lecture Tracking" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "تفاعل المحاضرات" if lang=="ar" else "Tracking" }}</span></div></div>
+    <div class="detail-card card-3d"><div class="detail-header"><div class="detail-icon"><i class="fas fa-video"></i></div><h1>{{ lecture.name }}</h1></div>
+    <div class="detail-body"><div class="data-table-wrapper"><table class="data-table"><thead><tr><th>#</th><th>{{ "الطالب" if lang=="ar" else "Student" }}</th><th>{{ "النشاط" if lang=="ar" else "Action" }}</th><th>{{ "التفاصيل" if lang=="ar" else "Details" }}</th><th>{{ "التاريخ" if lang=="ar" else "Date" }}</th></tr></thead>
+    <tbody>{% for t in tracking %}<tr><td>{{ loop.index }}</td><td>{{ t.user.full_name if t.user else "-" }}</td><td><span class="type-badge {{ t.action_type }}">{{ t.action_type }}</span></td><td>{{ t.action_details[:80] if t.action_details else "-" }}</td><td>{{ t.created_at.strftime("%Y-%m-%d %H:%M") }}</td></tr>{% endfor %}</tbody></table>
+    {% if not tracking %}<div class="empty-state"><i class="fas fa-eye-slash"></i><p>{{ "لا توجد تفاعلات" if lang=="ar" else "No interactions" }}</p></div>{% endif %}</div></div>
+    <div class="action-bar"><a href="{{ url_for("teacher_lectures") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

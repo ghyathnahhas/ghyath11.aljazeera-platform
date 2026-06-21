@@ -1,0 +1,34 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "شعار الجامعة" if lang=="ar" else "University Logo" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "شعار الجامعة" if lang=="ar" else "Logo" }}</span></div></div>
+    <div class="form-card card-3d" style="margin-bottom:20px;">
+        <div class="form-card-header"><h2><i class="fas fa-image"></i> {{ "رفع شعار الجامعة" if lang=="ar" else "Upload University Logo" }}</h2></div>
+        <form method="POST" enctype="multipart/form-data" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label>{{ "اختر صورة الشعار" if lang=="ar" else "Choose Logo Image" }}</label><input type="file" name="logo_file" accept=".png,.jpg,.jpeg,.svg,.gif,.webp" class="form-control input-3d" required></div>
+            <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-upload"></i> {{ "رفع الشعار" if lang=="ar" else "Upload Logo" }}</button>
+        </form>
+    </div>
+    {% if logos %}
+    <h3>{{ "الشعارات السابقة" if lang=="ar" else "Previous Logos" }}</h3>
+    <div class="logos-grid">
+        {% for l in logos %}
+        <div class="logo-item card-3d {% if l.is_active %}active-logo{% endif %}">
+            <img src="{{ url_for("static", filename="uploads/logo/" + l.file_name) }}" alt="Logo">
+            <div class="logo-actions">
+                {% if not l.is_active %}<form method="POST" action="{{ url_for("activate_logo", id=l.id) }}" style="display:inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm btn-success btn-3d"><i class="fas fa-check"></i></button></form>{% else %}<span class="active-badge">{{ "مفعّل" if lang=="ar" else "Active" }}</span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="action-bar">
+        <a href="{{ url_for("admin_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+

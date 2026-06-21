@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+{% block title %}{{ "إدارة الاختبارات" if lang=="ar" else "Test Management" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for('teacher_dashboard') }}">{{ "لوحة التحكم" if lang=="ar" else "Dashboard" }}</a>
+            <span>{{ "إدارة الاختبارات" if lang=="ar" else "Tests" }}</span>
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('admin_add_test') }}" class="btn btn-primary btn-3d btn-sm">
+                <i class="fas fa-plus"></i> {{ "إضافة اختبار جديد" if lang=="ar" else "Add New Test" }}
+            </a>
+        </div>
+    </div>
+
+    <div class="filter-bar card-3d">
+        <!-- صف البحث والتصفية المتقدمة -->
+        <div class="filter-form" style="flex-wrap:wrap;gap:10px;margin-bottom:15px;">
+            <form method="GET" action="{{ url_for('teacher_tests') }}" style="display:flex;gap:8px;flex:1;min-width:250px;">
+                <div style="position:relative;flex:1;">
+                    <i class="fas fa-search" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#999;"></i>
+                    <input type="text" name="search" value="{{ search|default('') }}" 
+                           placeholder="{{ 'بحث باسم الاختبار...' if lang=='ar' else 'Search by test name...' }}"
+                           style="width:100%;padding:8px 40px 8px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;">
+                </div>
+                <select name="course_id" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;">
+                    <option value="">{{ "كل المقررات" if lang=="ar" else "All Courses" }}</option>
+                    {% for c in courses %}
+                    <option value="{{ c.id }}" {% if course_filter|default(0) == c.id %}selected{% endif %}>
+                        {{ c.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="status" style="padding:8px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;">
+                    <option value="">{{ "كل الحالات" if lang=="ar" else "All Status" }}</option>
+                    <option value="active" {% if status_filter|default('') == 'active' %}selected{% endif %}>{{ "نشط" if lang=="ar" else "Active" }}</option>
+                    <option value="inactive" {% if status_filter|default('') == 'inactive' %}selected{% endif %}>{{ "معطل" if lang=="ar" else "Inactive" }}</option>
+                    <option value="expired" {% if status_filter|default('') == 'expired' %}selected{% endif %}>{{ "منتهي" if lang=="ar" else "Expired" }}</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary btn-3d">
+                    <i class="fas fa-filter"></i> {{ "تصفية" if lang=="ar" else "Filter" }}
+                </button>
+                <a href="{{ url_for('teacher_tests') }}" class="btn btn-sm btn-outline btn-3d">
+                    <i class="fas fa-redo"></i>
+                </a>
+            </form>
+        </div>
+        
+        <!-- صف أنواع الاختبارات -->
+        <div class="filter-form" style="flex-wrap:wrap;gap:8px;">
+            <a href="{{ url_for('teacher_tests') }}" class="btn btn-sm {% if not test_type_filter|default('') %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                {{ "الكل" if lang=="ar" else "All" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='mcq') }}" class="btn btn-sm {% if test_type_filter|default('')=='mcq' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-list-ol"></i> {{ "اختيار من متعدد" if lang=="ar" else "MCQ" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='tf') }}" class="btn btn-sm {% if test_type_filter|default('')=='tf' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-check-double"></i> {{ "صح أو خطأ" if lang=="ar" else "T/F" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='essay') }}" class="btn btn-sm {% if test_type_filter|default('')=='essay' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-pen-fancy"></i> {{ "مقالي" if lang=="ar" else "Essay" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='exercise') }}" class="btn btn-sm {% if test_type_filter|default('')=='exercise' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-dumbbell"></i> {{ "تمارين" if lang=="ar" else "Exercises" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='homework') }}" class="btn btn-sm {% if test_type_filter|default('')=='homework' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-tasks"></i> {{ "واجبات" if lang=="ar" else "Homework" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='quiz') }}" class="btn btn-sm {% if test_type_filter|default('')=='quiz' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-bolt"></i> {{ "مذاكرات" if lang=="ar" else "Quizzes" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='discussion') }}" class="btn btn-sm {% if test_type_filter|default('')=='discussion' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-comments"></i> {{ "مناقشات" if lang=="ar" else "Discussions" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='media') }}" class="btn btn-sm {% if test_type_filter|default('')=='media' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-photo-video"></i> {{ "صوت وصورة" if lang=="ar" else "Media" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='forum') }}" class="btn btn-sm {% if test_type_filter|default('')=='forum' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-users"></i> {{ "منتديات" if lang=="ar" else "Forums" }}
+            </a>
+            <a href="{{ url_for('teacher_tests', type='online') }}" class="btn btn-sm {% if test_type_filter|default('')=='online' %}btn-primary{% else %}btn-outline{% endif %} btn-3d">
+                <i class="fas fa-globe"></i> {{ "عبر الإنترنت" if lang=="ar" else "Online" }}
+            </a>
+        </div>
+    </div>
+
+    {% if tests %}
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ "اسم الاختبار" if lang=="ar" else "Test Name" }}</th>
+                    <th>{{ "المقرر" if lang=="ar" else "Course" }}</th>
+                    <th>{{ "النوع" if lang=="ar" else "Type" }}</th>
+                    <th>{{ "العلامة" if lang=="ar" else "Mark" }}</th>
+                    <th>{{ "المدة" if lang=="ar" else "Duration" }}</th>
+                    <th>{{ "الأسئلة" if lang=="ar" else "Questions" }}</th>
+                    <th>{{ "التسليمات" if lang=="ar" else "Submissions" }}</th>
+                    <th>{{ "الحالة" if lang=="ar" else "Status" }}</th>
+                    <th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tests %}
+                <tr class="{% if t.deadline and t.deadline < now() %}row-expired{% elif not t.is_active %}row-inactive{% endif %}">
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="type-icon-sm {{ t.test_type }}">
+                                <i class="fas {% if t.test_type=='mcq' %}fa-list-ol{% elif t.test_type=='tf' %}fa-check-double{% elif t.test_type=='essay' %}fa-pen-fancy{% elif t.test_type=='quiz' %}fa-bolt{% elif t.test_type=='homework' %}fa-tasks{% elif t.test_type=='exercise' %}fa-dumbbell{% else %}fa-file-alt{% endif %}"></i>
+                            </div>
+                            <div>
+                                <strong>{{ t.name }}</strong>
+                                {% if t.deadline %}
+                                <br><small class="{% if t.deadline < now() %}text-danger{% else %}text-muted{% endif %}">
+                                    <i class="fas fa-clock"></i> {{ t.deadline.strftime("%Y-%m-%d %H:%M") }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ t.course.name if t.course else "-" }}</td>
+                    <td>
+                        <span class="type-badge {{ t.test_type }}">
+                            {{ translate_test_type(t.test_type, lang) }}
+                        </span>
+                    </td>
+                    <td><strong>{{ t.total_mark }}</strong></td>
+                    <td>{{ t.duration_minutes }} {{ "دقيقة" if lang=="ar" else "min" }}</td>
+                    <td>
+                        <a href="{{ url_for('test_questions', id=t.id) }}" class="badge-code" title="{{ "إدارة الأسئلة" if lang=="ar" else "Manage Questions" }}">
+                            {{ t.questions.count() }} {{ "سؤال" if lang=="ar" else "Qs" }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('teacher_view_submissions', test_id=t.id) }}" 
+                           class="btn btn-sm {% if t.results.count() > 0 %}btn-success{% else %}btn-outline{% endif %} btn-3d"
+                           title="{{ "عرض التسليمات" if lang=="ar" else "View Submissions" }}">
+                            <i class="fas fa-users"></i> {{ t.results.count() }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if t.is_active and not (t.deadline and t.deadline < now()) %}
+                        <span class="badge-score good">
+                            <i class="fas fa-circle" style="font-size:8px;"></i> {{ "نشط" if lang=="ar" else "Active" }}
+                        </span>
+                        {% elif t.deadline and t.deadline < now() %}
+                        <span class="badge-score fail">
+                            <i class="fas fa-clock"></i> {{ "منتهي" if lang=="ar" else "Expired" }}
+                        </span>
+                        {% else %}
+                        <span class="badge-score fail">{{ "معطل" if lang=="ar" else "Inactive" }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                            <a href="{{ url_for('test_questions', id=t.id) }}" class="btn btn-sm btn-info btn-3d" title="{{ "الأسئلة" if lang=="ar" else "Questions" }}">
+                                <i class="fas fa-list"></i>
+                            </a>
+                            <a href="{{ url_for('teacher_view_submissions', test_id=t.id) }}" class="btn btn-sm btn-success btn-3d" title="{{ "النتائج" if lang=="ar" else "Results" }}">
+                                <i class="fas fa-chart-line"></i>
+                            </a>
+                            <a href="{{ url_for('admin_edit_test', id=t.id) }}" class="btn btn-sm btn-warning btn-3d" title="{{ "تعديل" if lang=="ar" else "Edit" }}">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('toggle_test_status', id=t.id) }}" style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-3d {% if t.is_active %}btn-secondary{% else %}btn-primary{% endif %}" 
+                                        title="{{ "تعطيل" if t.is_active and lang=="ar" else ("تفعيل" if not t.is_active and lang=="ar" else ("Disable" if t.is_active else "Enable")) }}">
+                                    <i class="fas {% if t.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                                </button>
+                            </form>
+                            <button onclick="confirmDelete('{{ url_for('admin_delete_test', id=t.id) }}')" class="btn btn-sm btn-danger btn-3d" title="{{ "حذف" if lang=="ar" else "Delete" }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state card-3d" style="padding:60px;text-align:center;">
+        <div style="position:relative;display:inline-block;">
+            <i class="fas fa-clipboard" style="font-size:64px;color:#ccc;margin-bottom:20px;display:block;"></i>
+            <i class="fas fa-plus-circle" style="position:absolute;bottom:0;right:-10px;font-size:24px;color:var(--primary);"></i>
+        </div>
+        <h3 style="color:var(--primary);">{{ "لا توجد اختبارات بعد" if lang=="ar" else "No Tests Yet" }}</h3>
+        <p style="color:var(--text-light);margin:10px 0 20px;">
+            {{ "ابدأ بإنشاء اختبارك الأول واجعل الطلاب يتفاعلون مع المحتوى" if lang=="ar" else "Start by creating your first test and engage your students" }}
+        </p>
+        
+        {% if test_type_filter|default('') %}
+        <p style="color:var(--warning);margin-bottom:15px;">
+            <i class="fas fa-filter"></i> 
+            {{ "لا توجد اختبارات من نوع" if lang=="ar" else "No tests of type" }} 
+            "{{ translate_test_type(test_type_filter, lang) }}"
+            - <a href="{{ url_for('teacher_tests') }}" style="color:var(--primary);">{{ "عرض الكل" if lang=="ar" else "Show All" }}</a>
+        </p>
+        {% endif %}
+        
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <a href="{{ url_for('admin_add_test') }}" class="btn btn-primary btn-3d btn-lg">
+                <i class="fas fa-plus-circle"></i> {{ "إنشاء اختبار جديد" if lang=="ar" else "Create New Test" }}
+            </a>
+            <a href="{{ url_for('teacher_courses') }}" class="btn btn-outline btn-3d btn-lg">
+                <i class="fas fa-book"></i> {{ "مقرراتي" if lang=="ar" else "My Courses" }}
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- إحصائيات محسّنة -->
+    <div class="dashboard-stats" style="margin-top:30px;grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon tests-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ tests|length }}</span>
+                <span class="dash-stat-label">{{ "إجمالي الاختبارات" if lang=="ar" else "Total Tests" }}</span>
+            </div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon students-icon"><i class="fas fa-user-check"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ total_submissions }}</span>
+                <span class="dash-stat-label">{{ "إجمالي التسليمات" if lang=="ar" else "Total Submissions" }}</span>
+            </div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon courses-icon"><i class="fas fa-question-circle"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ total_questions }}</span>
+                <span class="dash-stat-label">{{ "إجمالي الأسئلة" if lang=="ar" else "Total Questions" }}</span>
+            </div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon" style="background:linear-gradient(135deg,#28a745,#20c997);"><i class="fas fa-check-circle"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ active_tests|default(0) }}</span>
+                <span class="dash-stat-label">{{ "اختبارات نشطة" if lang=="ar" else "Active Tests" }}</span>
+            </div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon" style="background:linear-gradient(135deg,#dc3545,#c82333);"><i class="fas fa-hourglass-end"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ expired_tests|default(0) }}</span>
+                <span class="dash-stat-label">{{ "اختبارات منتهية" if lang=="ar" else "Expired Tests" }}</span>
+            </div>
+        </div>
+        <div class="dash-stat card-3d">
+            <div class="dash-stat-icon" style="background:linear-gradient(135deg,#17a2b8,#138496);"><i class="fas fa-chart-bar"></i></div>
+            <div class="dash-stat-info">
+                <span class="dash-stat-num">{{ avg_submissions|default(0) }}</span>
+                <span class="dash-stat-label">{{ "متوسط التسليمات" if lang=="ar" else "Avg Submissions" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .row-expired { opacity: 0.6; background-color: rgba(220, 53, 69, 0.05) !important; }
+        .row-inactive { opacity: 0.5; background-color: rgba(108, 117, 125, 0.05) !important; }
+        .row-expired:hover, .row-inactive:hover { opacity: 0.9; }
+        .type-icon-sm {
+            width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 14px; color: white; flex-shrink: 0;
+        }
+        .type-icon-sm.mcq { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .type-icon-sm.tf { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .type-icon-sm.essay { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .type-icon-sm.exercise { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .type-icon-sm.homework { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .type-icon-sm.quiz { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+        .type-icon-sm.discussion { background: linear-gradient(135deg, #fccb90, #d57eeb); }
+        .type-icon-sm.media { background: linear-gradient(135deg, #e0c3fc, #8ec5fc); }
+        .type-icon-sm.forum { background: linear-gradient(135deg, #f5576c, #ff6a88); }
+        .type-icon-sm.online { background: linear-gradient(135deg, #0acffe, #495aff); }
+        @media (max-width: 768px) {
+            .data-table-wrapper { overflow-x: auto; }
+            .data-table { min-width: 900px; }
+            .dashboard-stats { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+            .dashboard-stats { grid-template-columns: 1fr !important; }
+        }
+    </style>
+
+    <div class="action-bar">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary btn-3d">
+            <i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d">
+            <i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(deleteUrl) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        if (modal && form) {
+            form.action = deleteUrl;
+            modal.classList.add('active');
+        } else {
+            const msg = "{{ 'هل أنت متأكد من حذف هذا الاختبار؟ لا يمكن التراجع عن هذا الإجراء.' if lang == 'ar' else 'Are you sure you want to delete this test? This action cannot be undone.' }}";
+            if (confirm(msg)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = deleteUrl;
+                
+                // إضافة CSRF Token هامة جداً
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                form.appendChild(csrfInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "رفع محاضرة" if lang=="ar" else "Upload Lecture" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ url_for("lecture_detail", id=lecture.id) }}">{{ lecture.name }}</a><span>{{ "رفع محاضرة" if lang=="ar" else "Upload" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-cloud-upload-alt"></i> {{ "رفع محاضرة دراسية" if lang=="ar" else "Upload Lecture" }}</h2></div>
+        <form method="POST" enctype="multipart/form-data" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>{{ "نوع الملف" if lang=="ar" else "File Type" }}</label>
+                <div class="file-type-selector">
+                    <label class="file-type-option"><input type="radio" name="file_type" value="ppt" checked><span class="ft-icon"><i class="fas fa-file-powerpoint"></i></span><span>PowerPoint</span></label>
+                    <label class="file-type-option"><input type="radio" name="file_type" value="video"><span class="ft-icon"><i class="fas fa-video"></i></span><span>{{ "فيديو" if lang=="ar" else "Video" }}</span></label>
+                    <label class="file-type-option"><input type="radio" name="file_type" value="audio"><span class="ft-icon"><i class="fas fa-headphones"></i></span><span>{{ "صوت" if lang=="ar" else "Audio" }}</span></label>
+                    <label class="file-type-option"><input type="radio" name="file_type" value="pdf"><span class="ft-icon"><i class="fas fa-file-pdf"></i></span><span>PDF</span></label>
+                    <label class="file-type-option"><input type="radio" name="file_type" value="link"><span class="ft-icon"><i class="fas fa-link"></i></span><span>{{ "رابط خارجي" if lang=="ar" else "Link" }}</span></label>
+                </div>
+            </div>
+            <div class="form-group" id="fileUploadGroup">
+                <label>{{ "اختر الملف" if lang=="ar" else "Choose File" }}</label>
+                <div class="file-drop-zone" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>{{ "اسحب الملف هنا أو انقر للاختيار" if lang=="ar" else "Drag file here or click to select" }}</p>
+                    <input type="file" name="file" id="fileInput" class="file-input" accept=".ppt,.pptx,.mp4,.avi,.mkv,.mp3,.wav,.pdf">
+                </div>
+                <div class="preview-area" id="previewArea" style="display:none;">
+                    <h4>{{ "معاينة المحاضرة" if lang=="ar" else "Preview" }}</h4>
+                    <div id="previewContent"></div>
+                </div>
+            </div>
+            <div class="form-group" id="linkGroup" style="display:none;">
+                <label>{{ "الرابط الخارجي" if lang=="ar" else "External Link" }}</label>
+                <input type="url" name="external_link" class="form-control input-3d" placeholder="https://...">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-upload"></i> {{ "رفع" if lang=="ar" else "Upload" }}</button>
+                <a href="{{ url_for("lecture_detail", id=lecture.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("lecture_detail", id=lecture.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('input[name="file_type"]').forEach(function(r){
+    r.addEventListener('change',function(){
+        var v=this.value;
+        document.getElementById('fileUploadGroup').style.display=v==='link'?'none':'block';
+        document.getElementById('linkGroup').style.display=v==='link'?'block':'none';
+    });
+});
+var dropZone=document.getElementById('dropZone');
+var fileInput=document.getElementById('fileInput');
+dropZone.addEventListener('click',function(){fileInput.click();});
+dropZone.addEventListener('dragover',function(e){e.preventDefault();this.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',function(){this.classList.remove('drag-over');});
+dropZone.addEventListener('drop',function(e){e.preventDefault();this.classList.remove('drag-over');fileInput.files=e.dataTransfer.files;handlePreview();});
+fileInput.addEventListener('change',handlePreview);
+function handlePreview(){
+    var f=fileInput.files[0];
+    var pa=document.getElementById('previewArea');
+    var pc=document.getElementById('previewContent');
+    if(f){
+        pa.style.display='block';
+        var ft=f.type;
+        if(ft.startsWith('video/')){pc.innerHTML='<video controls style="max-width:100%;max-height:300px;"><source src="'+URL.createObjectURL(f)+'" type="'+ft+'"></video>';}
+        else if(ft.startsWith('audio/')){pc.innerHTML='<audio controls><source src="'+URL.createObjectURL(f)+'" type="'+ft+'"></audio>';}
+        else if(ft==='application/pdf'){pc.innerHTML='<iframe src="'+URL.createObjectURL(f)+'" style="width:100%;height:400px;border:none;"></iframe>';}
+        else{pc.innerHTML='<div class="preview-fallback"><i class="fas fa-file" style="font-size:48px;color:#0d2b6b;"></i><p>'+f.name+'</p><p>'+((f.size/1024/1024).toFixed(2))+' MB</p></div>';}
+    }
+}
+</script>
+{% endblock %}
+

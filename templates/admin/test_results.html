@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ "نتائج الاختبار" if lang=="ar" else "Test Results" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ back_url }}">{{ "الاختبارات" if lang=="ar" else "Tests" }}</a><span>{{ test.name }} - {{ "النتائج" if lang=="ar" else "Results" }}</span></div></div>
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>{{ "الطالب" if lang=="ar" else "Student" }}</th><th>{{ "الدرجة" if lang=="ar" else "Score" }}</th><th>{{ "من" if lang=="ar" else "of" }}</th><th>{{ "النسبة" if lang=="ar" else "%" }}</th><th>{{ "الوقت" if lang=="ar" else "Time" }}</th><th>{{ "التقييم" if lang=="ar" else "AI Eval" }}</th></tr></thead>
+            <tbody>
+                {% for r in results %}
+                <tr>
+                    <td>{{ loop.index }}</td><td>{{ r.user.full_name }}</td><td>{{ r.score }}</td><td>{{ r.total_marks }}</td>
+                    <td><span class="badge-score {% if r.percentage >= 80 %}excellent{% elif r.percentage >= 60 %}good{% else %}fail{% endif %}">{{ r.percentage }}%</span></td>
+                    <td>{{ r.submitted_at.strftime("%Y-%m-%d %H:%M") }}</td>
+                    <td class="ai-eval">{{ r.ai_evaluation[:60] if r.ai_evaluation else "-" }}...</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not results %}<div class="empty-state"><i class="fas fa-chart-bar"></i><p>{{ "لا توجد نتائج بعد" if lang=="ar" else "No results yet" }}</p></div>{% endif %}
+    </div>
+    <div class="action-bar">
+        <a href="{{ back_url }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

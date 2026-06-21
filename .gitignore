@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+database/
+*.db
+instance/
+.env
+venv/
+.env
+backups/

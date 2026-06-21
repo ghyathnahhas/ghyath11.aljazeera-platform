@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}{{ "مقرراتي" if lang=="ar" else "My Courses" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb"><a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a><span>{{ "مقرراتي" if lang=="ar" else "My Courses" }}</span></div>
+    </div>
+
+    <!-- === بطاقة معلومات الطالب === -->
+    <div class="student-info-card card-3d">
+        <div class="sic-avatar"><i class="fas fa-user-graduate"></i></div>
+        <div class="sic-info">
+            <h2>{{ student.full_name }}</h2>
+            <div class="sic-details">
+                <span><i class="fas fa-id-badge"></i> {{ "الرقم الجامعي" if lang=="ar" else "ID" }}: {{ student.number or "-" }}</span>
+                {% if my_college %}
+                <span><i class="fas fa-university"></i> {{ my_college.name if lang=="ar" else (my_college.name_en or my_college.name) }}</span>
+                {% else %}
+                <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> {{ "لم يتم تعيين كلية بعد" if lang=="ar" else "No college assigned" }}</span>
+                {% endif %}
+                {% if student.study_year %}
+                <span><i class="fas fa-calendar-alt"></i> {{ student.study_year }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="sic-stats">
+            <div class="sic-stat"><span class="sic-stat-num">{{ enrolled_courses|length }}</span><span class="sic-stat-label">{{ "مقرر مسجل" if lang=="ar" else "Enrolled" }}</span></div>
+            <div class="sic-stat"><span class="sic-stat-num">{{ available_courses|length + req_courses|length }}</span><span class="sic-stat-label">{{ "مقرر متاح" if lang=="ar" else "Available" }}</span></div>
+        </div>
+    </div>
+
+    <!-- === المقررات المسجل فيها فعلياً (تبقى كما هي لأنها الأهم) === -->
+    <div class="courses-section">
+        <div class="courses-section-header enrolled-header">
+            <div class="csh-icon"><i class="fas fa-book-open"></i></div>
+            <h2>{{ "المقررات المسجل فيها" if lang=="ar" else "Enrolled Courses" }}</h2>
+            <span class="csh-count">{{ enrolled_courses|length }} {{ "مقرر" if lang=="ar" else "courses" }}</span>
+        </div>
+        <div class="courses-section-body">
+            {% if enrolled_courses|length > 0 %}
+            <div class="courses-grid">
+                {% for course in enrolled_courses %}
+                <div class="course-item card-3d enrolled">
+                    <div class="course-enrolled-badge"><i class="fas fa-check-circle"></i> {{ "مسجل" if lang=="ar" else "Enrolled" }}</div>
+                    <div class="course-item-icon"><i class="fas fa-book"></i></div>
+                    <div class="course-item-info">
+                        <h4>{{ course.name if lang=="ar" else (course.name_en or course.name) }}</h4>
+                        <span class="course-code">{{ course.code or "-" }}</span>
+                        {% if course.teacher %}<span class="course-teacher"><i class="fas fa-chalkboard-teacher"></i> {{ course.teacher.full_name }}</span>{% endif %}
+                        {% if course.semester %}<span class="course-semester"><i class="fas fa-layer-group"></i> {{ course.semester.name if lang=="ar" else (course.semester.name_en or course.semester.name) }}</span>{% endif %}
+                    </div>
+                    <div class="course-item-actions">
+                        <a href="{{ url_for('student_course_detail', id=course.id) }}" class="btn btn-primary btn-3d"><i class="fas fa-eye"></i> {{ "دخول" if lang=="ar" else "Open" }}</a>
+                        <form method="POST" action="{{ url_for('student_unenroll', course_id=course.id) }}" style="display:inline;" onsubmit="return confirm('{{ 'هل أنت متأكد من إلغاء التسجيل من هذا المقرر؟' if lang=='ar' else 'Are you sure you want to unenroll?' }}');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-3d btn-sm"><i class="fas fa-trash-alt"></i> {{ "إلغاء التسجيل" if lang=="ar" else "Unenroll" }}</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state"><i class="fas fa-book-open"></i><p>{{ "لم تسجل في أي مقرر بعد" if lang=="ar" else "Not enrolled in any course yet" }}</p></div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- === المقررات المتاحة في كليته (قائمة منسدلة) === -->
+    {% if available_courses|length > 0 %}
+    <div class="courses-section">
+        <div class="courses-section-header available-header">
+            <div class="csh-icon"><i class="fas fa-plus-circle"></i></div>
+            <h2>{{ "مقررات متاحة في كليتك" if lang=="ar" else "Available in Your College" }}</h2>
+            <span class="csh-count">{{ available_courses|length }} {{ "مقرر" if lang=="ar" else "courses" }}</span>
+        </div>
+        <div class="courses-section-body">
+            
+            <select id="collegeCoursesDropdown" class="magic-dropdown available-dropdown" onchange="showCourseCard('avail', this.value)">
+                <option value="">-- اختر مقرراً لتسجيله من القائمة --</option>
+                {% for course in available_courses %}
+                <option value="{{ course.id }}">{{ course.name if lang=="ar" else (course.name_en or course.name) }} ({{ course.code or "-" }})</option>
+                {% endfor %}
+            </select>
+
+            <!-- هنا ستظهر البطاقة عند الاختيار -->
+            <div id="availDisplay" class="dynamic-display-area"></div>
+
+            <!-- البطاقات المخفية الجاهزة -->
+            <div style="display: none;">
+                {% for course in available_courses %}
+                <div id="avail-card-{{ course.id }}" class="course-item card-3d available animated-dropdown-card">
+                    <div class="course-item-icon"><i class="fas fa-book"></i></div>
+                    <div class="course-item-info">
+                        <h4>{{ course.name if lang=="ar" else (course.name_en or course.name) }}</h4>
+                        <span class="course-code">{{ course.code or "-" }}</span>
+                        {% if course.teacher %}<span class="course-teacher"><i class="fas fa-chalkboard-teacher"></i> {{ course.teacher.full_name }}</span>{% endif %}
+                        {% if course.semester %}<span class="course-semester"><i class="fas fa-layer-group"></i> {{ course.semester.name if lang=="ar" else (course.semester.name_en or course.semester.name) }}</span>{% endif %}
+                    </div>
+                    <div class="course-item-actions">
+                        <form method="POST" action="{{ url_for('student_enroll', course_id=course.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-3d"><i class="fas fa-user-plus"></i> {{ "تسجيل" if lang=="ar" else "Enroll" }}</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- === وحدة متطلبات الجامعة (قائمة منسدلة) === -->
+    {% if req_courses|length > 0 %}
+    <div class="courses-section">
+        <div class="courses-section-header req-header">
+            <div class="csh-icon"><i class="fas fa-book-reader"></i></div>
+            <h2>{{ "وحدة متطلبات الجامعة" if lang=="ar" else "University Requirements" }}</h2>
+            <span class="csh-count">{{ req_courses|length }} {{ "مقرر" if lang=="ar" else "courses" }}</span>
+            <span class="req-badge"><i class="fas fa-globe"></i> {{ "متاحة لجميع الطلاب" if lang=="ar" else "For all students" }}</span>
+        </div>
+        <div class="courses-section-body">
+
+            <select id="reqCoursesDropdown" class="magic-dropdown req-dropdown" onchange="showCourseCard('req', this.value)">
+                <option value="">-- اختر مقرر متطلبات من القائمة --</option>
+                {% for course in req_courses %}
+                <option value="{{ course.id }}">{{ course.name if lang=="ar" else (course.name_en or course.name) }} ({{ course.code or "-" }})</option>
+                {% endfor %}
+            </select>
+
+            <!-- هنا ستظهر البطاقة عند الاختيار -->
+            <div id="reqDisplay" class="dynamic-display-area"></div>
+
+            <!-- البطاقات المخفية الجاهزة -->
+            <div style="display: none;">
+                {% for course in req_courses %}
+                <div id="req-card-{{ course.id }}" class="course-item card-3d required animated-dropdown-card">
+                    <div class="course-item-icon"><i class="fas fa-book-reader"></i></div>
+                    <div class="course-item-info">
+                        <h4>{{ course.name if lang=="ar" else (course.name_en or course.name) }}</h4>
+                        <span class="course-code">{{ course.code or "-" }}</span>
+                        {% if course.teacher %}<span class="course-teacher"><i class="fas fa-chalkboard-teacher"></i> {{ course.teacher.full_name }}</span>{% endif %}
+                    </div>
+                    <div class="course-item-actions">
+                        <form method="POST" action="{{ url_for('student_enroll', course_id=course.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-3d"><i class="fas fa-user-plus"></i> {{ "تسجيل" if lang=="ar" else "Enroll" }}</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- === رسالة إذا لم تكن هناك كلية === -->
+    {% if not my_college %}
+    <div class="no-college-card card-3d">
+        <div class="ncc-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>{{ "لم يتم تعيين كلية أو قسم" if lang=="ar" else "No College Assigned" }}</h3>
+        <p>{{ "يرجى التواصل مع إدارة المنصة لتعيين كليتك أو قسمك" if lang=="ar" else "Please contact admin to assign your college" }}</p>
+    </div>
+    {% endif %}
+
+    <!-- === أزرار الإجراءات المطلوبة === -->
+    <div class="action-bar">
+        <button onclick="window.history.back()" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</button>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+
+<!-- كود الجافاسكربت الخاص بالقوائم المنسدلة -->
+<script>
+    function showCourseCard(prefix, courseId) {
+        let displayArea = document.getElementById(prefix + 'Display');
+        
+        // تفريغ المنطقة
+        displayArea.innerHTML = '';
+
+        // إذا اختار الطالب مقرراً
+        if (courseId) {
+            let hiddenCard = document.getElementById(prefix + '-card-' + courseId);
+            if (hiddenCard) {
+                // أخذ نسخة من البطاقة وإظهارها
+                let clone = hiddenCard.cloneNode(true);
+                clone.style.display = 'flex'; // لأن الكلاس الأصلي يعتمد على flex
+                displayArea.appendChild(clone);
+            }
+        }
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.student-info-card{display:flex;align-items:center;gap:24px;padding:28px;border-radius:var(--radius);background:var(--white);border:1px solid var(--border);margin-bottom:32px;box-shadow:0 4px 20px rgba(13,43,107,0.08)}
+.sic-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--white);flex-shrink:0;box-shadow:0 8px 24px rgba(13,43,107,0.2)}
+.sic-info{flex:1;min-width:0}
+.sic-info h2{font-size:22px;font-weight:800;color:var(--primary);margin-bottom:8px}
+.sic-details{display:flex;flex-wrap:wrap;gap:16px}
+.sic-details span{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--text-light);font-weight:500}
+.sic-details span i{color:var(--accent);font-size:16px}
+.sic-stats{display:flex;gap:20px;flex-shrink:0}
+.sic-stat{text-align:center;padding:12px 20px;border-radius:var(--radius-sm);background:linear-gradient(135deg,rgba(13,43,107,0.04),rgba(232,168,56,0.04));min-width:90px}
+.sic-stat-num{display:block;font-size:28px;font-weight:900;color:var(--primary)}
+.sic-stat-label{font-size:12px;color:var(--text-light);font-weight:600}
+.text-warning{color:#e65100!important}
+.courses-section{margin-bottom:28px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--white);box-shadow:0 2px 12px rgba(13,43,107,0.06)}
+.courses-section-header{display:flex;align-items:center;gap:14px;padding:18px 24px}
+.enrolled-header{background:linear-gradient(135deg,rgba(13,43,107,0.06),rgba(13,43,107,0.02))}
+.available-header{background:linear-gradient(135deg,rgba(40,167,69,0.06),rgba(40,167,69,0.02))}
+.req-header{background:linear-gradient(135deg,rgba(232,168,56,0.06),rgba(232,168,56,0.02))}
+.csh-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.enrolled-header .csh-icon{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:var(--white)}
+.available-header .csh-icon{background:linear-gradient(135deg,#28a745,#34d058);color:var(--white)}
+.req-header .csh-icon{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:var(--primary-dark)}
+.courses-section-header h2{flex:1;font-size:18px;font-weight:800;color:var(--primary);margin:0}
+.csh-count{font-size:13px;color:var(--text-light);font-weight:600;padding:4px 14px;border-radius:20px;background:rgba(13,43,107,0.06)}
+.req-badge{font-size:11px;color:var(--accent);font-weight:700;padding:3px 12px;border-radius:20px;background:rgba(232,168,56,0.1);display:inline-flex;align-items:center;gap:4px}
+.courses-section-body{padding:20px 24px}
+.courses-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.course-item{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:var(--radius-sm);background:var(--white);border:1px solid var(--border);transition:var(--transition);position:relative;overflow:hidden}
+.course-item:hover{border-color:var(--primary-light);box-shadow:0 6px 24px rgba(13,43,107,0.12);transform:translateY(-4px)}
+.course-item.enrolled{border-top:3px solid var(--primary)}
+.course-item.available{border-top:3px solid #28a745}
+.course-item.required{border-top:3px solid var(--accent)}
+.course-enrolled-badge{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:20px;background:rgba(13,43,107,0.08);color:var(--primary);font-size:11px;font-weight:700}
+[dir="ltr"] .course-enrolled-badge{left:auto;right:12px}
+.course-item-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(13,43,107,0.06),rgba(232,168,56,0.06));display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--primary);flex-shrink:0}
+.course-item-info{flex:1;min-width:0}
+.course-item-info h4{font-size:16px;font-weight:700;color:var(--primary);margin-bottom:6px;line-height:1.4}
+.course-code{display:inline-block;padding:2px 12px;border-radius:8px;background:rgba(13,43,107,0.06);color:var(--primary);font-size:12px;font-weight:700;font-family:monospace;margin-right:8px}
+.course-teacher{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-light);margin-right:12px}
+.course-semester{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted)}
+.course-item-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.no-college-card{text-align:center;padding:40px;border:2px dashed var(--warning);background:rgba(255,193,7,0.04)}
+.ncc-icon{font-size:48px;color:var(--warning);margin-bottom:16px}
+.no-college-card h3{font-size:20px;font-weight:700;color:var(--primary);margin-bottom:8px}
+.no-college-card p{font-size:14px;color:var(--text-light)}
+
+/* === أنماط القوائم المنسدلة السحرية المضافة === */
+.magic-dropdown {
+    width: 100%; padding: 14px 18px; border-radius: 12px; border: 2px solid var(--border);
+    background-color: #f8f9fa; font-size: 16px; font-weight: 700; color: var(--primary);
+    cursor: pointer; transition: var(--transition); appearance: none; margin-bottom: 15px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230d2b6b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: left 15px center; background-size: 18px;
+}
+[dir="ltr"] .magic-dropdown { background-position: right 15px center; }
+.magic-dropdown:focus { outline: none; }
+.available-dropdown { border-color: rgba(40,167,69,0.3); color: #28a745; }
+.available-dropdown:focus { border-color: #28a745; box-shadow: 0 0 0 3px rgba(40,167,69,0.15); }
+.req-dropdown { border-color: rgba(232,168,56,0.3); color: var(--accent); }
+.req-dropdown:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,168,56,0.15); }
+
+.dynamic-display-area { min-height: 20px; }
+@keyframes dropDownAnim {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animated-dropdown-card { animation: dropDownAnim 0.4s ease-out; }
+
+@media(max-width:768px){
+    .student-info-card{flex-direction:column;text-align:center}
+    .sic-details{justify-content:center}
+    .sic-stats{justify-content:center}
+    .courses-grid{grid-template-columns:1fr}
+    .course-enrolled-badge{position:static;margin-bottom:8px}
+}
+</style>
+{% endblock %}

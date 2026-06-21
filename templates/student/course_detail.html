@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }} - {{ "تفاصيل المقرر" if lang=="ar" else "Course Detail" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for('student_courses') }}">{{ "مقرراتي" if lang=="ar" else "My Courses" }}</a>
+            <span>{{ course.name }}</span>
+        </div>
+    </div>
+
+    <!-- بطاقة معلومات المقرر والغرفة الافتراضية (كما في التصميم الأصلي) -->
+    <div class="card-3d" style="padding:30px; margin-bottom:30px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
+            <div style="flex:1;">
+                <h2 style="color:var(--primary); margin-bottom:5px;"><i class="fas fa-book-open"></i> {{ course.name }}</h2>
+                <p style="color:#555; margin:0; font-size:1.1rem;">
+                    <strong>{{ "الكود" if lang=="ar" else "Code" }}:</strong> {{ course.code or "-" }} 
+                    &nbsp;|&nbsp; 
+                    <strong>{{ "المدرس" if lang=="ar" else "Teacher" }}:</strong> {{ course.teacher.full_name if course.teacher else "-" }}
+                </p>
+                {% if course.description %}<p style="margin-top:15px; color:#666; font-size:1rem;">{{ course.description }}</p>{% endif %}
+            </div>
+            
+            <a href="{{ url_for('virtual_classroom', course_id=course.id) }}" class="btn btn-primary btn-3d btn-lg virtual-class-btn">
+                <i class="fas fa-chalkboard-teacher"></i> {{ "الغرفة الافتراضية" if lang=="ar" else "Virtual Class" }}
+            </a>
+        </div>
+    </div>
+
+    <!-- القسم المنسدل: المحاضرات -->
+    <div class="card-3d accordion-card active" style="margin-bottom:20px; padding:0; overflow:hidden;">
+        <div class="accordion-header" style="padding:15px 20px; cursor:pointer; background:linear-gradient(135deg, rgba(13,43,107,0.04), rgba(232,168,56,0.04));" onclick="toggleAcc(this.parentElement)">
+            <h3 style="color:var(--primary); border:none; padding:0; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-video"></i> {{ "المحاضرات الدراسية" if lang=="ar" else "Lectures" }}
+            </h3>
+            <i class="fas fa-chevron-down accordion-arrow" style="color:var(--primary); transition: transform 0.3s;"></i>
+        </div>
+        <div class="accordion-body" style="padding:20px; border-top:2px solid #eee;">
+            {% if course.lectures|count_items > 0 %}
+            <ul style="list-style:none; padding:0; margin:0;">
+                {% for lecture in course.lectures %}
+                <li style="padding:12px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center;">
+                    <i class="fas fa-play-circle" style="color:var(--primary); font-size:1.5rem; margin-left:10px;"></i>
+                    <a href="{{ url_for('lecture_detail', id=lecture.id) }}" style="color:#333; text-decoration:none; font-weight:600; font-size:1.1rem;">
+                        {{ lecture.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div style="text-align:center; padding:30px; color:#888;">
+                <i class="fas fa-video-slash" style="font-size:40px; margin-bottom:10px; display:block;"></i>
+                {{ "لا توجد محاضرات بعد" if lang=="ar" else "No lectures yet" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- القسم المنسدل: الاختبارات -->
+    <div class="card-3d accordion-card" style="margin-bottom:20px; padding:0; overflow:hidden;">
+        <div class="accordion-header" style="padding:15px 20px; cursor:pointer; background:linear-gradient(135deg, rgba(13,43,107,0.04), rgba(232,168,56,0.04));" onclick="toggleAcc(this.parentElement)">
+            <h3 style="color:var(--primary); border:none; padding:0; margin:0; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-clipboard-list"></i> {{ "الاختبارات" if lang=="ar" else "Tests" }}
+            </h3>
+            <i class="fas fa-chevron-down accordion-arrow" style="color:var(--primary); transition: transform 0.3s;"></i>
+        </div>
+        <div class="accordion-body" style="padding:20px; border-top:2px solid #eee;">
+            {% if course.tests|count_items > 0 %}
+            <ul style="list-style:none; padding:0; margin:0;">
+                {% for test in course.tests %}
+                {% if test.is_active %}
+                <li style="padding:12px; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <span style="font-weight:600; font-size:1.1rem;"><i class="fas fa-file-alt" style="color:var(--primary);"></i> {{ test.name }}</span>
+                    <div>
+                        {% if test.id in taken_test_ids %}
+                            <span class="badge-score good"><i class="fas fa-check-circle"></i> {{ "تم الأداء" if lang=="ar" else "Done" }}</span>
+                        {% else %}
+                            <a href="{{ url_for('student_take_test', id=test.id) }}" class="btn btn-sm btn-success btn-3d">
+                                <i class="fas fa-pen"></i> {{ "أداء الاختبار" if lang=="ar" else "Take Test" }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div style="text-align:center; padding:30px; color:#888;">
+                <i class="fas fa-clipboard-check" style="font-size:40px; margin-bottom:10px; display:block;"></i>
+                {{ "لا توجد اختبارات بعد" if lang=="ar" else "No tests yet" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- أزرار العودة والرئيسية (مضافة حسب طلبك) -->
+    <div class="action-bar" style="margin-top:20px;">
+        <a href="{{ url_for('student_courses') }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+
+<style>
+    /* حركة الزر الاحترافية (من التصميم الأصلي) */
+    .virtual-class-btn {
+        animation: float 3s ease-in-out infinite;
+        font-size: 1.3rem;
+        padding: 15px 30px;
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    /* تنسيقات القائمة المنسدلة الجديدة */
+    .accordion-card .accordion-body { display: none; }
+    .accordion-card.active .accordion-body { display: block; animation: slideDown 0.3s ease-out; }
+    .accordion-card.active .accordion-arrow { transform: rotate(180deg); }
+    .accordion-header { display: flex; justify-content: space-between; align-items: center; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+    @media (max-width: 768px) {
+        .virtual-class-btn { width: 100%; text-align: center; margin-top: 15px; }
+    }
+</style>
+
+<script>
+    function toggleAcc(element) {
+        element.classList.toggle('active');
+    }
+</script>
+{% endblock %}

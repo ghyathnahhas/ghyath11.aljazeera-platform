@@ -1,0 +1,19 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "تسليم واجب" if lang=="ar" else "Submit Assignment" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ url_for("student_assignments") }}">{{ "الواجبات" if lang=="ar" else "Assignments" }}</a><span>{{ "تسليم" if lang=="ar" else "Submit" }}</span></div></div>
+    <div class="form-card card-3d"><div class="form-card-header"><h2><i class="fas fa-file-alt"></i> {{ "تسليم واجب" if lang=="ar" else "Submit Assignment" }}</h2></div>
+    <form method="POST" enctype="multipart/form-data" class="entity-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="detail-card card-3d" style="margin-bottom:20px;">
+            <div class="detail-header"><div class="detail-icon"><i class="fas fa-file-alt"></i></div><div class="detail-title-area"><h3>{{ announcement.title or "واجب" }}</h3><p>{{ announcement.message }}</p>
+            {% if announcement.deadline %}<p class="deadline-warning"><i class="fas fa-clock"></i> {{ "موعد التسليم: " if lang=="ar" else "Deadline: " }}{{ announcement.deadline.strftime("%Y-%m-%d %H:%M") }}</p>{% endif %}</div>
+        </div>
+        <div class="form-group"><label>{{ "محتوى التسليم" if lang=="ar" else "Content" }}</label><textarea name="content" class="form-control input-3d" rows="6" placeholder="{{ "اكتب إجابتك هنا..." if lang=="ar" else "Write answer..." }}" required></textarea></div>
+        <div class="form-group"><label>{{ "رفع ملف (اختياري)" if lang=="ar" else "Upload file (optional)" }}</label><input type="file" name="file" class="form-control input-3d" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png,.zip,.rar"></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary btn-3d btn-lg"><i class="fas fa-paper-plane"></i> {{ "تسليم" if lang=="ar" else "Submit" }}</button><a href="{{ url_for("student_assignments") }}" class="btn btn-secondary btn-3d btn-lg"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a></div>
+    </form></div>
+    <div class="action-bar"><a href="{{ url_for("student_assignments") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

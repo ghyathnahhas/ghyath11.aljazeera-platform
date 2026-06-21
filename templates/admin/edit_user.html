@@ -1,0 +1,97 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "تعديل مستخدم" if lang=="ar" else "Edit User" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a><a href="{{ url_for('admin_users') }}">{{ "المستخدمين" if lang=="ar" else "Users" }}</a><span>{{ "تعديل" if lang=="ar" else "Edit" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-user-edit"></i> {{ "تعديل المستخدم" if lang=="ar" else "Edit User" }}: {{ user.full_name }}</h2></div>
+        <form method="POST" class="entity-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+                <div class="form-group"><label>{{ "الرقم" if lang=="ar" else "Number" }}</label><input type="number" name="number" class="form-control input-3d" value="{{ user.number or '' }}"></div>
+                <div class="form-group"><label>{{ "الاسم الأول" if lang=="ar" else "First Name" }} <span class="required">*</span></label><input type="text" name="first_name" class="form-control input-3d" value="{{ user.first_name }}" required></div>
+                <div class="form-group"><label>{{ "الاسم الثاني" if lang=="ar" else "Second Name" }} <span class="required">*</span></label><input type="text" name="second_name" class="form-control input-3d" value="{{ user.second_name }}" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "الموبايل" if lang=="ar" else "Mobile" }}</label><input type="text" name="mobile" class="form-control input-3d" value="{{ user.mobile or '' }}"></div>
+                <div class="form-group"><label>{{ "اسم المستخدم" if lang=="ar" else "Username" }} <span class="required">*</span></label><input type="text" name="username" class="form-control input-3d" value="{{ user.username }}" required></div>
+                <div class="form-group"><label>{{ "كلمة المرور الجديدة" if lang=="ar" else "New Password" }}</label><input type="password" name="new_password" class="form-control input-3d" placeholder="{{ "اتركه فارغا" if lang=="ar" else "Leave empty" }}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "نوع المستخدم" if lang=="ar" else "Type" }} <span class="required">*</span></label>
+                    <select name="user_type" class="form-control input-3d" required id="eutSel" onchange="eutChange()">
+                        <option value="student" {% if user.user_type=='student' %}selected{% endif %}>{{ "طالب" if lang=="ar" else "Student" }}</option>
+                        <option value="teacher" {% if user.user_type=='teacher' %}selected{% endif %}>{{ "مدرس" if lang=="ar" else "Teacher" }}</option>
+                        <option value="guest" {% if user.user_type=='guest' %}selected{% endif %}>{{ "ضيف" if lang=="ar" else "Guest" }}</option>
+                        <option value="admin" {% if user.user_type=='admin' %}selected{% endif %}>{{ "مدير" if lang=="ar" else "Admin" }}</option>
+                    </select>
+                </div>
+                <div class="form-group" id="ecolGrp"><label>{{ "الكلية / القسم" if lang=="ar" else "College/Dept" }}</label>
+                    <select name="college_id" class="form-control input-3d">
+                        <option value="">{{ "-- اختر --" if lang=="ar" else "-- Select --" }}</option>
+                        {% for c in all_colleges %}{% if c.children.count() > 0 %}
+                        <optgroup label="{{ c.name if lang=='ar' else (c.name_en or c.name) }}">
+                            <option value="{{ c.id }}" {% if user.college_id==c.id %}selected{% endif %}>{{ c.name }}</option>
+                            {% for d in c.children %}<option value="{{ d.id }}" {% if user.college_id==d.id %}selected{% endif %} style="padding-right:28px;">└ {{ d.name }}</option>{% endfor %}
+                        </optgroup>{% else %}<option value="{{ c.id }}" {% if user.college_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endif %}{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" id="eyrGrp"><label>{{ "السنة الدراسية" if lang=="ar" else "Year" }}</label>
+                    <select name="study_year" class="form-control input-3d">
+                        <option value="">{{ "-- اختر --" if lang=="ar" else "-- Select --" }}</option>
+                        {% for y in ["السنة الأولى","السنة الثانية","السنة الثالثة","السنة الرابعة","السنة الخامسة"] %}<option value="{{ y }}" {% if user.study_year==y %}selected{% endif %}>{{ y }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% if user.is_teacher %}
+            <div class="form-section" id="etaSection">
+                <div class="form-section-title" style="background:linear-gradient(135deg,rgba(13,43,107,0.06),rgba(40,167,69,0.06))!important"><i class="fas fa-layer-group"></i> {{ "تعيينات إضافية" if lang=="ar" else "Additional" }}
+                    <span style="font-size:11px;background:#fff3cd;color:#856404;padding:3px 12px;border-radius:20px;font-weight:600;margin-left:auto;">{{ "الكلية الحالية: " if lang=="ar" else "Current: " }}{{ user.college.name if user.college else "-" }}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:16px 20px;">
+                    {% for c in all_colleges %}
+                    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+                        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(135deg,rgba(13,43,107,0.04),rgba(232,168,56,0.04));"><div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;flex-shrink:0;">{% if "صيدلة" in c.name %}<i class="fas fa-pills"></i>{% elif "هندسة" in c.name %}<i class="fas fa-drafting-compass"></i>{% elif "إدارة" in c.name %}<i class="fas fa-chart-pie"></i>{% else %}<i class="fas fa-book-reader"></i>{% endif %}</div><h4 style="flex:1;font-size:14px;font-weight:700;color:var(--primary);margin:0;">{{ c.name if lang=="ar" else (c.name_en or c.name) }}</h4></div>
+                        <div style="padding:8px 16px 12px;">
+                            {% for d in c.children %}
+                            {% set assigned = assignments|selectattr('college_id','equalto',d.id)|list %}
+                            <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:4px;cursor:pointer;transition:all .3s;{% if assigned %}background:rgba(40,167,69,0.08);border-left:3px solid #28a745;{% endif %}" onmouseover="this.style.background='rgba(13,43,107,0.04)'" onmouseout="this.style.background='{% if assigned %}rgba(40,167,69,0.08){% else %}transparent{% endif %}'">
+                                <input type="checkbox" name="additional_colleges" value="{{ d.id }}" onchange="this.parentElement.querySelector('.ays').style.display=this.checked?'inline-block':'none'" {% if assigned %}checked{% endif %}>
+                                <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;">{{ d.name }}</span>
+                                <select name="ay_{{ d.id }}" class="ays" style="display:{% if assigned %}inline-block{% else %}none{% endif %};max-width:150px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:#fff;color:var(--text);">
+                                    <option value="">{{ "-- سنة --" if lang=="ar" else "-- Year --" }}</option>
+                                    {% for y in all_years %}{% for a in assignments if a.college_id==d.id %}{% if a.study_year_id==y.id %}<option value="{{ y.id }}" selected>{{ y.name }}</option>{% endif %}{% endfor %}{% endfor %}
+                                </select>
+                            </label>
+                            {% endfor %}
+                            {% if c.children.count()==0 %}
+                            {% set assigned = assignments|selectattr('college_id','equalto',c.id)|list %}
+                            <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:4px;cursor:pointer;transition:all .3s;{% if assigned %}background:rgba(40,167,69,0.08);border-left:3px solid #28a745;{% endif %}" onmouseover="this.style.background='rgba(13,43,107,0.04)'" onmouseout="this.style.background='{% if assigned %}rgba(40,167,69,0.08){% else %}transparent{% endif %}'">
+                                <input type="checkbox" name="additional_colleges" value="{{ c.id }}" {% if assigned %}checked{% endif %}>
+                                <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;">{{ c.name }}</span>
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="form-actions" style="margin-top:24px;">
+                <button type="submit" class="btn btn-primary btn-3d btn-lg"><i class="fas fa-save"></i> {{ "حفظ التعديلات" if lang=="ar" else "Save" }}</button>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-secondary btn-3d btn-lg"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for('admin_users') }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function eutChange(){var t=document.getElementById('eutSel').value;document.getElementById('ecolGrp').style.display=(t==='student'||t==='teacher')?'block':'none';document.getElementById('eyrGrp').style.display=(t==='student'||t==='teacher')?'block':'none';document.getElementById('etaSection').style.display=t==='teacher'?'block':'none';}
+eutChange();
+</script>
+{% endblock %}

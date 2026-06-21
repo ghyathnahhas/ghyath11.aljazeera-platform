@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ college.name if lang=="ar" else (college.name_en or college.name) }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a>
+            {% if college.parent %}
+            <a href="{{ url_for("college_detail", id=college.parent.id) }}">{{ college.parent.name }}</a>
+            {% endif %}
+            <span>{{ college.name if lang=="ar" else (college.name_en or college.name) }}</span>
+        </div>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for("add_college", id=college.id) }}" class="btn btn-primary btn-3d btn-sm"><i class="fas fa-plus"></i> {{ "إضافة كلية جديدة" if lang=="ar" else "Add New" }}</a>
+        {% endif %}
+    </div>
+    <div class="detail-card card-3d">
+        <div class="detail-header">
+            <div class="detail-icon">
+                {% if "صيدلة" in college.name %}<i class="fas fa-pills"></i>
+                {% elif "هندسة" in college.name %}<i class="fas fa-drafting-compass"></i>
+                {% elif "معلوماتية" in college.name %}<i class="fas fa-laptop-code"></i>
+                {% elif "مدنية" in college.name %}<i class="fas fa-hard-hat"></i>
+                {% elif "معمارية" in college.name %}<i class="fas fa-building"></i>
+                {% elif "إدارة" in college.name %}<i class="fas fa-chart-pie"></i>
+                {% else %}<i class="fas fa-book-reader"></i>{% endif %}
+            </div>
+            <div class="detail-title-area">
+                <h1>{{ college.name if lang=="ar" else (college.name_en or college.name) }}</h1>
+                <p class="detail-desc">{{ college.description or "" }}</p>
+            </div>
+        </div>
+        <div class="detail-body">
+            {% if college.children|count_items > 0 %}
+            <h3 class="sub-title"><i class="fas fa-sitemap"></i> {{ "الأقسام" if lang=="ar" else "Departments" }}</h3>
+            <div class="sub-items-grid">
+                {% for child in college.children %}
+                <div class="sub-item-card card-3d" onclick="window.location.href='{{ url_for("college_detail", id=child.id) }}'">
+                    <h4>{{ child.name if lang=="ar" else (child.name_en or child.name) }}</h4>
+                    <p>{{ child.description or "" }}</p>
+                    <span class="item-arrow"><i class="fas fa-arrow-left"></i></span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if college.years|count_items > 0 %}
+            <h3 class="sub-title"><i class="fas fa-calendar-alt"></i> {{ "السنوات الدراسية" if lang=="ar" else "Study Years" }}</h3>
+            <div class="sub-items-grid">
+                {% for year in college.years %}
+                <div class="sub-item-card card-3d" onclick="window.location.href='{{ url_for("year_detail", id=year.id) }}'">
+                    <h4>{{ year.name if lang=="ar" else (year.name_en or year.name) }}</h4>
+                    <p>{{ year.description or "" }}</p>
+                    <span class="item-arrow"><i class="fas fa-arrow-left"></i></span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="action-bar">
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for("edit_college", id=college.id) }}" class="btn btn-warning btn-3d"><i class="fas fa-edit"></i> {{ "التعديل" if lang=="ar" else "Edit" }}</a>
+        <button onclick="confirmDelete('{{ url_for("delete_college", id=college.id) }}')" class="btn btn-danger btn-3d"><i class="fas fa-trash"></i> {{ "الحذف" if lang=="ar" else "Delete" }}</button>
+        {% endif %}
+        <button onclick="window.history.back()" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</button>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

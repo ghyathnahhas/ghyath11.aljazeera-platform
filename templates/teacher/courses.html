@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ "مقرراتي الدراسية" if lang == "ar" else "My Courses" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for('teacher_dashboard') }}">{{ "لوحة التحكم" if lang == "ar" else "Dashboard" }}</a>
+            <span>{{ "مقرراتي" if lang == "ar" else "My Courses" }}</span>
+        </div>
+    </div>
+
+    {% if courses %}
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ "اسم المقرر" if lang == "ar" else "Course Name" }}</th>
+                    <th>{{ "الرمز" if lang == "ar" else "Code" }}</th>
+                    <th>{{ "الفصل الدراسي" if lang == "ar" else "Semester" }}</th>
+                    <th>{{ "إجراءات" if lang == "ar" else "Actions" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <strong>{{ course.name }}</strong>
+                        <br><small class="text-muted">{{ course.name_en if course.name_en else "" }}</small>
+                    </td>
+                    <td>{{ course.code or "-" }}</td>
+                    <td>{{ course.semester.name if course.semester else "-" }}</td>
+                    <td>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <!-- زر الغرفة الافتراضية الاحترافية (الأساسي) -->
+                            <a href="{{ url_for('virtual_classroom', course_id=course.id) }}" class="btn btn-primary btn-sm btn-3d" title="{{ "دخول الغرفة الافتراضية" if lang == "ar" else "Virtual Class" }}">
+                                <i class="fas fa-chalkboard-teacher"></i> {{ "الغرفة الافتراضية" if lang == "ar" else "Virtual Class" }}
+                            </a>
+                            
+                            <!-- زر تفاصيل المقرر -->
+                            <a href="{{ url_for('course_detail', id=course.id) }}" class="btn btn-info btn-sm btn-3d" title="{{ "تفاصيل المقرر" if lang == "ar" else "Course Details" }}">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state card-3d" style="padding:60px; text-align:center;">
+        <i class="fas fa-book-open" style="font-size:64px; color:#ccc; margin-bottom:20px; display:block;"></i>
+        <h3 style="color:var(--primary);">{{ "لا توجد مقررات دراسية مسجلة باسمك حالياً" if lang == "ar" else "No Courses Assigned Yet" }}</h3>
+        <p style="color:var(--text-light); margin:10px 0 20px;">{{ "يمكنك إضافة مقررات من خلال الأقسام والكليات" if lang == "ar" else "You can add courses from colleges section" }}</p>
+    </div>
+    {% endif %}
+
+    <div class="action-bar" style="margin-top: 20px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary btn-3d">
+            <i class="fas fa-arrow-right"></i> {{ "العودة للوحة التحكم" if lang == "ar" else "Back to Dashboard" }}
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d">
+            <i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang == "ar" else "Home" }}
+        </a>
+    </div>
+</section>
+{% endblock %}

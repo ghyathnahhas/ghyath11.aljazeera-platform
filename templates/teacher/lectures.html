@@ -1,0 +1,15 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "محاضراتي" if lang=="ar" else "My Lectures" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "محاضراتي" if lang=="ar" else "My Lectures" }}</span></div></div>
+    {% if lectures %}
+    <div class="data-table-wrapper card-3d"><table class="data-table"><thead><tr><th>#</th><th>{{ "المحاضرة" if lang=="ar" else "Lecture" }}</th><th>{{ "المقرر" if lang=="ar" else "Course" }}</th><th>{{ "الملفات" if lang=="ar" else "Files" }}</th><th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th></tr></thead>
+    <tbody>{% for l in lectures %}<tr><td>{{ loop.index }}</td><td>{{ l.name }}</td><td>{{ l.course.name if l.course else "-" }}</td><td>{{ l.files.count() }}</td>
+    <td><a href="{{ url_for("lecture_detail", id=l.id) }}" class="btn btn-sm btn-info btn-3d"><i class="fas fa-eye"></i></a>
+    <a href="{{ url_for("upload_lecture", id=l.id) }}" class="btn btn-sm btn-success btn-3d"><i class="fas fa-cloud-upload-alt"></i></a>
+    <a href="{{ url_for("edit_lecture", id=l.id) }}" class="btn btn-sm btn-warning btn-3d"><i class="fas fa-edit"></i></a></td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="empty-state"><i class="fas fa-video-slash"></i><p>{{ "لا توجد محاضرات" if lang=="ar" else "No lectures" }}</p></div>{% endif %}
+    <div class="action-bar"><a href="{{ url_for("teacher_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}متابعة الطلاب والتقييم الذكي{% endblock %}
+{% block content %}
+<section class="content-section" style="padding: 20px 0;">
+    <div class="section-header" style="margin-bottom: 30px;">
+        <h2 class="section-title"><i class="fas fa-user-graduate"></i> متابعة الطلاب والتقييم بالذكاء الاصطناعي</h2>
+        <p class="section-desc">تحليل شامل لأداء الطلاب بناءً على الاختبارات، النشاط، والجوائز مع توصيات ذكية للمدرسين</p>
+    </div>
+
+    <div class="card card-3d" style="padding: 25px; margin-bottom: 30px; border-radius: 15px;">
+        <form method="GET" action="{{ url_for('teacher_students_tracking') }}" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <label style="font-weight: bold; font-size: 1.1em; color: #333;"><i class="fas fa-book"></i> اختر المقرر:</label>
+            <select name="course_id" class="form-control input-3d" style="max-width: 350px; flex: 1;" required>
+                <option value="">-- اختر المقرر للتحليل --</option>
+                {% for c in courses %}
+                <option value="{{ c.id }}" {% if c.id == course_id %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-3d" style="padding: 10px 30px;">
+                <i class="fas fa-search"></i> بحث وتقييم
+            </button>
+        </form>
+    </div>
+
+    {% if selected_course and students_data %}
+    <div class="card-3d" style="padding: 20px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 12px; border-left: 6px solid #6f42c1; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <h4 style="color: #ffffff; margin-bottom: 5px;"><i class="fas fa-robot"></i> تحليل الذكاء الاصطناعي جاهز</h4>
+        <p style="margin: 0; color: rgba(255, 255, 255, 0.9);">تم تحليل أداء <strong>{{ total_students }}</strong> طالب في مقرر <strong>{{ selected_course.name }}</strong>. (عرض الصفحة {{ page }})</p>
+    </div>
+
+    <div class="table-responsive" style="border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <table class="table table-3d-custom" style="margin: 0; border-collapse: separate; border-spacing: 0 10px; font-size: 0.95em;">
+            <thead>
+                <tr>
+                    <th style="width: 30px;">#</th>
+                    <th>اسم الطالب</th>
+                    <th>المعدل العام</th>
+                    <th>المذاكرات</th>
+                    <th>أحسن اختبار</th>
+                    <th>الوظائف</th>
+                    <th>الجوائز</th>
+                    <th>آخر نشاط</th>
+                    <th class="ai-header" style="min-width: 250px;">
+                        <i class="fas fa-brain"></i> التقييم الذكي
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in students_data %}
+                <tr>
+                    <td><strong>{{ (page - 1) * per_page + loop.index }}</strong></td>
+                    <td>
+                        <strong style="color: #2a5298;">{{ data.student.full_name }}</strong>
+                        <br><span class="badge-id" style="font-size: 0.8em;">{{ data.student.number or '---' }}</span>
+                    </td>
+                    <td>
+                        {% if data.total_tests == 0 %}
+                            <span style="color:#aaa;">---</span>
+                        {% elif data.overall_avg >= 80 %}
+                            <span class="score-high">{{ data.overall_avg }}%</span>
+                        {% elif data.overall_avg >= 60 %}
+                            <span class="score-mid">{{ data.overall_avg }}%</span>
+                        {% else %}
+                            <span class="score-low">{{ data.overall_avg }}%</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- حقل المذاكرات -->
+                    <td>
+                        {% if data.muthakarat_taken > 0 %}
+                            <strong style="color:#17a2b8;">{{ data.muthakarat_avg }}%</strong>
+                            <br><small style="color: #888;">({{ data.muthakarat_taken }} مذاكرة)</small>
+                        {% else %}
+                            <span style="color:#ccc;">لم يؤدِ</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- حقل أحسن اختبار -->
+                    <td>
+                        {% if data.best_score > 0 %}
+                            {% if data.best_score >= 60 %}
+                                <span style="color: #20c997; font-weight: bold; font-size: 1.1em;">{{ data.best_score }}%</span>
+                            {% else %}
+                                <span style="color: #dc3545; font-weight: bold;">{{ data.best_score }}%</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:#ccc;">---</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- حقل الوظائف -->
+                    <td>
+                        {% if data.assignments_taken > 0 %}
+                            <strong style="color:#e0a800;">{{ data.assignments_avg }}%</strong>
+                            <br><small style="color: #888;">({{ data.assignments_taken }} وظيفة)</small>
+                        {% else %}
+                            <span style="color:#ccc;">لم يسلم</span>
+                        {% endif %}
+                    </td>
+
+                    <td><span class="badge-count bg-warning"><i class="fas fa-trophy"></i> {{ data.rewards }}</span></td>
+                    <td>
+                        {% if data.tracking %}
+                            <small style="color: #666;">{{ data.tracking[0].action_details }} <br> <span style="color:#999; font-size: 0.85em;">{{ data.tracking[0].created_at.strftime('%Y-%m-%d') }}</span></small>
+                        {% else %}
+                            <span style="color: #aaa;">لا يوجد</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="ai-eval-box ai-{{ data.ai_class }}">
+                            <strong>{{ data.ai_eval }}</strong>
+                        </div>
+                        {% if data.ai_class == 'dark' %}
+                        <div class="ai-tip" style="color: #dc3545;">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>تنبيه:</strong> {{ data.ai_tip }}
+                        </div>
+                        {% elif data.ai_class != 'secondary' %}
+                        <div class="ai-tip">
+                            <i class="fas fa-lightbulb"></i> <strong>نصيحة:</strong> {{ data.ai_tip }}
+                        </div>
+                        {% else %}
+                        <div class="ai-tip">
+                            <i class="fas fa-lightbulb"></i> <strong>ملاحظة:</strong> {{ data.ai_tip }}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- نظام التقسيم -->
+    <nav aria-label="Page navigation" style="margin-top: 30px;">
+        <ul class="pagination justify-content-center">
+            {% if page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('teacher_students_tracking', course_id=course_id, page=page-1) }}" style="border-radius: 8px; margin: 0 5px;">
+                    <i class="fas fa-angle-right"></i> السابق
+                </a>
+            </li>
+            {% endif %}
+
+            {% set total_pages = ((total_students + per_page - 1) // per_page) | int %}
+            {% for i in range(1, total_pages + 1) %}
+                {% if i == page %}
+                <li class="page-item active"><a class="page-link" href="#" style="border-radius: 8px; margin: 0 5px; background: #6f42c1; border-color: #6f42c1;">{{ i }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('teacher_students_tracking', course_id=course_id, page=i) }}" style="border-radius: 8px; margin: 0 5px;">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('teacher_students_tracking', course_id=course_id, page=page+1) }}" style="border-radius: 8px; margin: 0 5px;">
+                    التالي <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% elif course_id and not students_data %}
+    <div class="card card-3d" style="padding: 40px; text-align: center; border-radius: 15px; margin-top: 20px;">
+        <i class="fas fa-users-slash" style="font-size: 50px; color: #ccc; margin-bottom: 15px;"></i>
+        <h4 style="color: #888;">لا يوجد طلاب مسجلين في هذا المقرر بعد.</h4>
+    </div>
+    {% endif %}
+
+    <!-- أزرار التحكم -->
+    {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_teacher) %}
+    <div class="action-buttons-footer" style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary btn-3d" style="margin: 5px;">
+            <i class="fas fa-tachometer-alt"></i> العودة للوحة التحكم
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-3d" style="margin: 5px;">
+            <i class="fas fa-home"></i> العودة للرئيسية
+        </a>
+    </div>
+    {% endif %}
+
+</section>
+
+<style>
+    .table-3d-custom thead th {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 15px 10px;
+        text-align: center;
+        font-weight: 600;
+        border: none;
+        font-size: 1em;
+    }
+    
+    .ai-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #9b59b6 100%) !important;
+    }
+
+    .table-3d-custom tbody tr {
+        background: #ffffff;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .table-3d-custom tbody tr:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .table-3d-custom tbody td {
+        padding: 15px 10px;
+        vertical-align: middle;
+        border: none;
+        text-align: center;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .badge-id {
+        background: #e9ecef; color: #495057; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8em;
+    }
+    .badge-count {
+        color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.9em; font-weight: bold;
+    }
+    
+    .score-high { color: #28a745; font-weight: bold; font-size: 1.1em; }
+    .score-mid { color: #ffc107; font-weight: bold; font-size: 1.1em; }
+    .score-low { color: #dc3545; font-weight: bold; font-size: 1.1em; }
+
+    .ai-eval-box {
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        font-size: 0.95em;
+        text-align: right;
+        display: inline-block;
+        width: 100%;
+    }
+    .ai-success { background: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+    .ai-primary { background: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8; }
+    .ai-warning { background: #fff3cd; color: #856404; border-left: 5px solid #ffc107; }
+    .ai-danger { background: #f8d7da; color: #721c24; border-left: 5px solid #dc3545; }
+    .ai-secondary { background: #f8f9fa; color: #6c757d; border-left: 5px solid #adb5bd; }
+    .ai-dark { background: #343a40; color: #f8f9fa; border-left: 5px solid #1d2124; }
+
+    .ai-tip {
+        font-size: 0.85em;
+        color: #6f42c1;
+        text-align: right;
+        background: rgba(111, 66, 193, 0.05);
+        padding: 6px;
+        border-radius: 5px;
+    }
+    .ai-tip i { color: #f39c12; }
+</style>
+{% endblock %}

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="{{ 'ar' if lang == 'ar' else 'en' }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% if lang == 'ar' %}منصة جامعة الجزيرة الخاصة التعليمية - نظام إدارة التعلم المتقدم{% else %}AlJazeera Private University Platform - Advanced LMS{% endif %}">
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="جامعة الجزيرة">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='uploads/logo/icon-192x192.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='uploads/logo/icon-192x192.png') }}">
+
+    <title>{% block title %}{% if lang == 'ar' %}جامعة الجزيرة الخاصة{% else %}AlJazeera Private University{% endif %}{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        @media (max-width: 768px) {
+            .main-nav {
+                display: none !important;
+            }
+            .sidebar {
+                width: 280px !important;
+                left: -300px !important;
+                z-index: 99999 !important;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.5) !important;
+                transition: left 0.3s ease-in-out !important;
+            }
+            .sidebar.active {
+                left: 0 !important;
+            }
+            .sidebar-overlay {
+                display: block !important;
+            }
+            .main-content {
+                margin: 0 !important;
+                padding: 10px !important;
+                width: 100% !important;
+            }
+            .header-inner {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            .header-left {
+                width: 100%;
+                margin-top: 10px;
+                justify-content: center;
+            }
+        }
+        .guest-banner {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            color: #856404;
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 3px solid #ffc107;
+            animation: slideDown 0.5s ease-out;
+        }
+        .guest-banner i { margin-left: 8px; margin-right: 8px; }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* === إصلاح حجم الخط في القوائم ليعود كما كان === */
+        .main-nav .nav-link { font-size: 16px !important; font-weight: 600 !important; padding: 10px 15px !important; }
+        .main-nav .dropdown-menu a { font-size: 15px !important; padding: 10px 20px !important; }
+        .sidebar-menu a { font-size: 16px !important; font-weight: 600 !important; }
+
+        /* === إصلاح الشريط الأبيض وإعادة القائمة الفرعية المنسدلة بشكل احترافي === */
+        .dropdown-item.has-sub { position: relative !important; }
+        .dropdown-item.has-sub > a { display: flex !important; justify-content: space-between !important; align-items: center !important; }
+        .dropdown-item.has-sub .sub-arrow { font-size: 12px !important; margin-right: 8px !important; margin-left: 8px !important; color: var(--primary, #0d6efd) !important; }
+
+        .dropdown-item.has-sub .sub-dropdown {
+            display: none !important;
+            position: absolute !important;
+            top: 0 !important;
+            right: 100% !important;
+            left: auto !important;
+            background: #ffffff !important;
+            min-width: 260px !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+            z-index: 99999 !important;
+            border-radius: 8px !important;
+            padding: 5px 0 !important;
+            list-style: none !important;
+            border: 1px solid #e9ecef !important;
+            margin: 0 !important;
+        }
+        .dropdown-item.has-sub:hover > .sub-dropdown {
+            display: block !important;
+        }
+        .dropdown-item.has-sub .sub-dropdown li a {
+            padding: 10px 20px !important;
+            display: block !important;
+            white-space: nowrap !important;
+            font-size: 15px !important;
+            transition: background 0.2s ease;
+        }
+        .dropdown-item.has-sub .sub-dropdown li a:hover {
+            background: #f8f9fa !important;
+            color: var(--primary, #0d6efd) !important;
+            text-decoration: none !important;
+        }
+
+        /* منع ظهور أي شريط أبيض للكليات بدون أقسام فرعية */
+        .dropdown-item:not(.has-sub):hover {
+            background: transparent !important;
+        }
+        .dropdown-item:not(.has-sub) .sub-dropdown {
+            display: none !important;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="main-body">
+    <div class="particles-container" id="particles"></div>
+
+    {% if current_user.is_authenticated and current_user.is_guest %}
+    <div class="guest-banner">
+        <i class="fas fa-eye"></i>
+        {% if lang == 'ar' %}
+            أنت تتصفح كضيف زائر، بعض الميزات مثل المحاضرات والغرف الافتراضية مقيدة.
+        {% else %}
+            You are browsing as a guest. Features like lectures and virtual classes are restricted.
+        {% endif %}
+        <a href="{{ url_for('guest_exit') }}" style="color:#664d03; text-decoration:underline; font-weight:bold; margin-right:15px; margin-left:15px;">
+            <i class="fas fa-sign-in-alt"></i>
+            {% if lang == 'ar' %}
+                سجل دخولك الآن
+            {% else %}
+                Login Now
+            {% endif %}
+        </a>
+    </div>
+    {% endif %}
+
+    <header class="main-header" id="mainHeader">
+        <div class="header-inner">
+            <div class="header-right">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                {% if logo %}
+                <a href="{{ url_for('index') }}" class="logo-link">
+                    <img src="{{ url_for('static', filename='uploads/logo/' + logo.file_name) }}" alt="Logo" class="university-logo animated-logo">
+                </a>
+                {% endif %}
+                <a href="{{ url_for('index') }}" class="university-name">
+                    <span class="name-ar">جامعة الجزيرة الخاصة</span>
+                    <span class="name-en">AlJazeera Private University</span>
+                </a>
+            </div>
+            <div class="header-left">
+                <div class="lang-switch">
+                    <a href="{{ url_for('change_language', lang_code='ar') }}" class="lang-btn {% if lang == 'ar' %}active{% endif %}">عربي</a>
+                    <span class="lang-divider">|</span>
+                    <a href="{{ url_for('change_language', lang_code='en') }}" class="lang-btn {% if lang == 'en' %}active{% endif %}">EN</a>
+                </div>
+                {% if current_user.is_authenticated %}
+                <div class="user-info-header">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ current_user.full_name }}</span>
+                    <span class="user-type-badge">{{ current_user.user_type }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <nav class="main-nav" id="mainNav">
+        <div class="nav-inner">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>{% if lang == 'ar' %}الرئيسية{% else %}Home{% endif %}</span>
+                    </a>
+                </li>
+                <li class="nav-item has-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        <i class="fas fa-university"></i>
+                        <span>{% if lang == 'ar' %}الكليات{% else %}Colleges{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% for college in get_navigation_structure() %}
+                        {% set has_children = college.children.count() > 0 %}
+                        <li class="dropdown-item {% if has_children %}has-sub{% endif %}">
+                            <a href="{{ url_for('college_detail', id=college.id) }}">
+                                {% if lang == 'ar' %}{{ college.name }}{% else %}{{ college.name_en or college.name }}{% endif %}
+                                {% if has_children %}<i class="fas fa-chevron-left sub-arrow"></i>{% endif %}
+                            </a>
+                            {% if has_children %}
+                            <ul class="sub-dropdown">
+                                {% for child in college.children %}
+                                <li>
+                                    <a href="{{ url_for('college_detail', id=child.id) }}">
+                                        {% if lang == 'ar' %}{{ child.name }}{% else %}{{ child.name_en or child.name }}{% endif %}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <li class="nav-item has-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        <i class="fas fa-cogs"></i>
+                        <span>{% if lang == 'ar' %}لوحة التحكم{% else %}Control Panel{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_users') }}"><i class="fas fa-users-cog"></i> {% if lang == 'ar' %}إدارة المستخدمين{% else %}User Management{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_enrollments') }}"><i class="fas fa-user-check"></i> {% if lang == 'ar' %}موافقات التسجيل{% else %}Enrollments{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_tests') }}"><i class="fas fa-clipboard-check"></i> {% if lang == 'ar' %}إدارة الاختبارات{% else %}Test Management{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_statistics') }}"><i class="fas fa-chart-bar"></i> {% if lang == 'ar' %}إدارة الإحصائيات{% else %}Statistics{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_logo') }}"><i class="fas fa-image"></i> {% if lang == 'ar' %}رفع شعار الجامعة{% else %}Upload Logo{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_backup') }}"><i class="fas fa-database"></i> {% if lang == 'ar' %}النسخ الاحتياطي{% else %}Backup{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_teacher %}
+                <li class="nav-item has-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span>{% if lang == 'ar' %}لوحة المدرس{% else %}Teacher Panel{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('teacher_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_courses') }}"><i class="fas fa-book"></i> {% if lang == 'ar' %}مقرراتي{% else %}My Courses{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_lectures') }}"><i class="fas fa-video"></i> {% if lang == 'ar' %}محاضراتي{% else %}My Lectures{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_tests') }}"><i class="fas fa-clipboard-list"></i> {% if lang == 'ar' %}إدارة الاختبارات{% else %}Tests{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_students_tracking') }}"><i class="fas fa-user-graduate"></i> {% if lang == 'ar' %}متابعة الطلاب{% else %}Student Tracking{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_send_announcement') }}"><i class="fas fa-bell"></i> {% if lang == 'ar' %}إرسال تنبيهات{% else %}Send Alerts{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_student_rewards') }}"><i class="fas fa-trophy"></i> {% if lang == 'ar' %}الجوائز والمكافآت{% else %}Rewards{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_student %}
+                <li class="nav-item has-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>{% if lang == 'ar' %}لوحة الطالب{% else %}Student Panel{% endif %}</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{{ url_for('student_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_courses') }}"><i class="fas fa-book-open"></i> {% if lang == 'ar' %}مقرراتي{% else %}My Courses{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_tests') }}"><i class="fas fa-clipboard-list"></i> {% if lang == 'ar' %}الاختبارات{% else %}Tests{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_results') }}"><i class="fas fa-chart-line"></i> {% if lang == 'ar' %}النتائج{% else %}Results{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_assignments') }}"><i class="fas fa-tasks"></i> {% if lang == 'ar' %}الواجبات والتمارين{% else %}Assignments{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_messages') }}"><i class="fas fa-envelope"></i> {% if lang == 'ar' %}الرسائل التنبيهية{% else %}Messages{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_rewards') }}"><i class="fas fa-trophy"></i> {% if lang == 'ar' %}المكافآت{% else %}Rewards{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_profile') }}"><i class="fas fa-id-card"></i> {% if lang == 'ar' %}ملفي{% else %}Profile{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.is_guest %}
+                <li class="nav-item">
+                    <a href="{{ url_for('academic_archive') }}" class="nav-link">
+                        <i class="fas fa-archive"></i>
+                        <span>{% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</span>
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item nav-login-item">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('logout') }}" class="nav-link logout-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>{% if lang == 'ar' %}تسجيل الخروج{% else %}Logout{% endif %}</span>
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link login-link">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>{% if lang == 'ar' %}تسجيل الدخول{% else %}Login{% endif %}</span>
+                    </a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>{% if lang == 'ar' %}القائمة{% else %}Menu{% endif %}</h3>
+            <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> {% if lang == 'ar' %}الرئيسية{% else %}Home{% endif %}</a></li>
+            <li class="sidebar-dropdown-parent">
+                <a href="#"><i class="fas fa-university"></i> {% if lang == 'ar' %}الكليات{% else %}Colleges{% endif %} <i class="fas fa-chevron-down"></i></a>
+                <ul class="sidebar-submenu">
+                    {% for college in get_navigation_structure() %}
+                    {% set has_children = college.children.count() > 0 %}
+                    <li><a href="{{ url_for('college_detail', id=college.id) }}">{% if lang == 'ar' %}{{ college.name }}{% else %}{{ college.name_en or college.name }}{% endif %}</a></li>
+                    {% if has_children %}
+                    {% for child in college.children %}
+                    <li class="sub-item"><a href="{{ url_for('college_detail', id=child.id) }}">{% if lang == 'ar' %}{{ child.name }}{% else %}{{ child.name_en or child.name }}{% endif %}</a></li>
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_admin %}
+                <li class="sidebar-dropdown-parent">
+                    <a href="#"><i class="fas fa-cogs"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Control Panel{% endif %} <i class="fas fa-chevron-down"></i></a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_users') }}"><i class="fas fa-users-cog"></i> {% if lang == 'ar' %}إدارة المستخدمين{% else %}User Management{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_enrollments') }}"><i class="fas fa-user-check"></i> {% if lang == 'ar' %}موافقات التسجيل{% else %}Enrollments{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_tests') }}"><i class="fas fa-clipboard-check"></i> {% if lang == 'ar' %}إدارة الاختبارات{% else %}Test Management{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_statistics') }}"><i class="fas fa-chart-bar"></i> {% if lang == 'ar' %}إدارة الإحصائيات{% else %}Statistics{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_logo') }}"><i class="fas fa-image"></i> {% if lang == 'ar' %}رفع شعار الجامعة{% else %}Upload Logo{% endif %}</a></li>
+                        <li><a href="{{ url_for('admin_backup') }}"><i class="fas fa-database"></i> {% if lang == 'ar' %}النسخ الاحتياطي{% else %}Backup{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_teacher %}
+                <li class="sidebar-dropdown-parent">
+                    <a href="#"><i class="fas fa-chalkboard-teacher"></i> {% if lang == 'ar' %}لوحة المدرس{% else %}Teacher Panel{% endif %} <i class="fas fa-chevron-down"></i></a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('teacher_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_courses') }}"><i class="fas fa-book"></i> {% if lang == 'ar' %}مقرراتي{% else %}My Courses{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_lectures') }}"><i class="fas fa-video"></i> {% if lang == 'ar' %}محاضراتي{% else %}My Lectures{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_tests') }}"><i class="fas fa-clipboard-list"></i> {% if lang == 'ar' %}إدارة الاختبارات{% else %}Tests{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_students_tracking') }}"><i class="fas fa-user-graduate"></i> {% if lang == 'ar' %}متابعة الطلاب{% else %}Student Tracking{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_send_announcement') }}"><i class="fas fa-bell"></i> {% if lang == 'ar' %}إرسال تنبيهات{% else %}Send Alerts{% endif %}</a></li>
+                        <li><a href="{{ url_for('teacher_student_rewards') }}"><i class="fas fa-trophy"></i> {% if lang == 'ar' %}الجوائز والمكافآت{% else %}Rewards{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_student %}
+                <li class="sidebar-dropdown-parent">
+                    <a href="#"><i class="fas fa-graduation-cap"></i> {% if lang == 'ar' %}لوحة الطالب{% else %}Student Panel{% endif %} <i class="fas fa-chevron-down"></i></a>
+                    <ul class="sidebar-submenu">
+                        <li><a href="{{ url_for('student_dashboard') }}"><i class="fas fa-tachometer-alt"></i> {% if lang == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_courses') }}"><i class="fas fa-book-open"></i> {% if lang == 'ar' %}مقرراتي{% else %}My Courses{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_tests') }}"><i class="fas fa-clipboard-list"></i> {% if lang == 'ar' %}الاختبارات{% else %}Tests{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_results') }}"><i class="fas fa-chart-line"></i> {% if lang == 'ar' %}النتائج{% else %}Results{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_assignments') }}"><i class="fas fa-tasks"></i> {% if lang == 'ar' %}الواجبات والتمارين{% else %}Assignments{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_messages') }}"><i class="fas fa-envelope"></i> {% if lang == 'ar' %}الرسائل التنبيهية{% else %}Messages{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_rewards') }}"><i class="fas fa-trophy"></i> {% if lang == 'ar' %}المكافآت{% else %}Rewards{% endif %}</a></li>
+                        <li><a href="{{ url_for('student_profile') }}"><i class="fas fa-id-card"></i> {% if lang == 'ar' %}ملفي{% else %}Profile{% endif %}</a></li>
+                        <li><a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_guest %}
+                <li>
+                    <a href="{{ url_for('academic_archive') }}"><i class="fas fa-archive"></i> {% if lang == 'ar' %}الأرشيف الأكاديمي{% else %}Academic Archive{% endif %}</a>
+                </li>
+                {% endif %}
+                <li><a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> {% if lang == 'ar' %}تسجيل الخروج{% else %}Logout{% endif %}</a></li>
+            {% else %}
+                <li><a href="{{ url_for('login') }}" class="login-link"><i class="fas fa-sign-in-alt"></i> {% if lang == 'ar' %}تسجيل الدخول{% else %}Login{% endif %}</a></li>
+            {% endif %}
+        </ul>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="flash-container" id="flashContainer">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }} animated-flash">
+                    <div class="flash-icon">
+                        {% if category == 'success' %}<i class="fas fa-check-circle"></i>
+                        {% elif category == 'danger' %}<i class="fas fa-exclamation-circle"></i>
+                        {% elif category == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+                        {% else %}<i class="fas fa-info-circle"></i>{% endif %}
+                    </div>
+                    <div class="flash-text">{{ message }}</div>
+                    <button class="flash-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="main-content" id="mainContent">
+        <div class="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-inner">
+            <div class="footer-3d-wave"></div>
+            <p>&copy; 2026-2027 {% if lang == 'ar' %}جامعة الجزيرة الخاصة - جميع الحقوق محفوظة{% else %}Al-Jazeera Private University - All Rights Reserved{% endif %}</p>
+            <p class="footer-sub">{% if lang == 'ar' %}منصة تعليمية متطورة بتقنيات الذكاء الاصطناعي{% else %}Advanced Educational Platform with AI Technologies{% endif %}</p>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box modal-3d">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle text-danger"></i> {% if lang == 'ar' %}تأكيد الحذف{% else %}Confirm Delete{% endif %}</h3>
+            </div>
+            <div class="modal-body">
+                <p>{% if lang == 'ar' %}هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.{% else %}Are you sure you want to delete this item? This action cannot be undone.{% endif %}</p>
+            </div>
+            <div class="modal-footer">
+                <form id="deleteForm" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-3d">{% if lang == 'ar' %}نعم، احذف{% else %}Yes, Delete{% endif %}</button>
+                </form>
+                <button class="btn btn-secondary btn-3d" onclick="closeDeleteModal()">{% if lang == 'ar' %}إلغاء{% else %}Cancel{% endif %}</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('{{ url_for("static", filename="sw.js") }}')
+            .then(function(registration) {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(function(err) {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        {% if current_user.is_authenticated and current_user.is_guest %}
+        var forbiddenButtons = document.querySelectorAll('a[href*="/edit/"], a[href*="/delete"], form[action*="/delete"], a[href*="/upload"], a[href*="/virtual-class"], a[href*="/take"]');
+        forbiddenButtons.forEach(function(btn) { btn.style.display = 'none'; });
+        {% endif %}
+    });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

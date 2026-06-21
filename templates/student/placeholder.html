@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <span>{{ title }}</span>
+        </div>
+    </div>
+    <div class="detail-card card-3d" style="text-align: center; padding: 80px 20px;">
+        <div style="font-size: 80px; color: #ccc; margin-bottom: 20px;">
+            <i class="{{ icon }}"></i>
+        </div>
+        <h2>{{ title }}</h2>
+        <p style="color: #888; font-size: 18px; margin-top: 15px;">هذا القسم قيد التطوير والتحديث حالياً وسيتوفر قريباً</p>
+        <div style="margin-top: 30px;">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary btn-3d"><i class="fas fa-arrow-right"></i> العودة للوحة التحكم</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

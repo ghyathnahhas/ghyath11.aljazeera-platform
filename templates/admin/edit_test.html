@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ "تعديل اختبار" if lang=="ar" else "Edit Test" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "تعديل" if lang=="ar" else "Edit" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-edit"></i> {{ "تعديل الاختبار" if lang=="ar" else "Edit Test" }}</h2></div>
+        <form method="POST" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group"><label>{{ "اسم الاختبار" if lang=="ar" else "Name" }} <span class="required">*</span></label><input type="text" name="name" class="form-control input-3d" value="{{ test.name }}" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "المقرر" if lang=="ar" else "Course" }}</label><select name="course_id" class="form-control input-3d">{% for c in courses %}<option value="{{ c.id }}" {% if test.course_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+                <div class="form-group">
+                    <label>{{ "النوع" if lang=="ar" else "Type" }}</label>
+                    <select name="test_type" class="form-control input-3d">
+                        <option value="mcq" {% if test.test_type=="mcq" %}selected{% endif %}>{{ "اختيار من متعدد" if lang=="ar" else "MCQ" }}</option>
+                        <option value="tf" {% if test.test_type=="tf" %}selected{% endif %}>{{ "صح أو خطأ" if lang=="ar" else "T/F" }}</option>
+                        <option value="essay" {% if test.test_type=="essay" %}selected{% endif %}>{{ "مقالي" if lang=="ar" else "Essay" }}</option>
+                        <option value="exercise" {% if test.test_type=="exercise" %}selected{% endif %}>{{ "تمارين" if lang=="ar" else "Exercise" }}</option>
+                        <option value="homework" {% if test.test_type=="homework" %}selected{% endif %}>{{ "واجبات" if lang=="ar" else "Homework" }}</option>
+                        <option value="quiz" {% if test.test_type=="quiz" %}selected{% endif %}>{{ "مذاكرات" if lang=="ar" else "Quiz" }}</option>
+                        <option value="discussion" {% if test.test_type=="discussion" %}selected{% endif %}>{{ "مناقشات" if lang=="ar" else "Discussion" }}</option>
+                        <option value="online" {% if test.test_type=="online" %}selected{% endif %}>Online</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "علامة السؤال" if lang=="ar" else "Per Q" }}</label><input type="number" name="per_question_mark" class="form-control input-3d" value="{{ test.per_question_mark }}" step="0.5"></div>
+                <div class="form-group"><label>{{ "العلامة الكلية" if lang=="ar" else "Total" }}</label><input type="number" name="total_mark" class="form-control input-3d" value="{{ test.total_mark }}"></div>
+                <div class="form-group"><label>{{ "المدة" if lang=="ar" else "Duration" }}</label><input type="number" name="duration_minutes" class="form-control input-3d" value="{{ test.duration_minutes }}"></div>
+            </div>
+            <div class="form-group"><label>{{ "موعد التسليم" if lang=="ar" else "Deadline" }}</label><input type="datetime-local" name="deadline" class="form-control input-3d" value="{{ test.deadline.strftime("%Y-%m-%dT%H:%M") if test.deadline else "" }}"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-save"></i> {{ "حفظ" if lang=="ar" else "Save" }}</button>
+                <a href="{{ url_for("admin_tests") if current_user.is_admin else url_for("teacher_tests") }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("admin_tests") if current_user.is_admin else url_for("teacher_tests") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,154 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "لوحة تحكم المدرس" if lang=="ar" else "Teacher Dashboard" }}{% endblock %}
+{% block content %}
+<section class="dashboard-section">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-chalkboard-teacher"></i> {{ "لوحة تحكم المدرس" if lang=="ar" else "Teacher Control Panel" }}</h1>
+        <div class="teacher-welcome-bar">
+            <span><i class="fas fa-user"></i> {{ current_user.full_name }}</span>
+            <span><i class="fas fa-calendar"></i> {{ "آخر دخول" if lang=="ar" else "Last login" }}: {{ current_user.last_login.strftime("%Y-%m-%d %H:%M") if current_user.last_login else "-" }}</span>
+        </div>
+    </div>
+
+    <!-- === كليات وأقسام المدرس === -->
+    <div class="teacher-colleges-section card-3d">
+        <div class="tcs-header">
+            <div class="tcs-icon"><i class="fas fa-university"></i></div>
+            <h2>{{ "الكليات والأقسام التي تدرس فيها" if lang=="ar" else "Your Colleges & Departments" }}</h2>
+            <span class="tcs-count">{{ assigned_colleges|length }} {{ "تعيين" if lang=="ar" else "assignments" }}</span>
+        </div>
+        <div class="tcs-body">
+            {% if assigned_colleges|length > 0 %}
+            <div class="tcs-grid">
+                {% for ac in assigned_colleges %}
+                <div class="tcs-card {% if ac.is_primary %}primary{% else %}secondary{% endif %}">
+                    <div class="tcs-card-icon">
+                        {% if "صيدلة" in ac.college.name %}<i class="fas fa-pills"></i>
+                        {% elif "هندسة" in ac.college.name %}<i class="fas fa-drafting-compass"></i>
+                        {% elif "إدارة" in ac.college.name %}<i class="fas fa-chart-pie"></i>
+                        {% elif "متطلبات" in ac.college.name %}<i class="fas fa-book-reader"></i>
+                        {% else %}<i class="fas fa-building"></i>{% endif %}
+                    </div>
+                    <div class="tcs-card-info">
+                        <h4>{{ ac.college.name if lang=="ar" else (ac.college.name_en or ac.college.name) }}</h4>
+                        {% if ac.college.parent %}
+                        <span class="tcs-parent"><i class="fas fa-link"></i> {{ ac.college.parent.name if lang=="ar" else (ac.college.parent.name_en or ac.college.parent.name) }}</span>
+                        {% endif %}
+                        {% if ac.study_year %}
+                        <span class="tcs-year"><i class="fas fa-calendar-alt"></i> {{ ac.study_year.name if lang=="ar" else (ac.study_year.name_en or ac.study_year.name) }}</span>
+                        {% endif %}
+                        {% if ac.is_primary %}
+                        <span class="tcs-badge primary-badge"><i class="fas fa-star"></i> {{ "التعيين الأساسي" if lang=="ar" else "Primary" }}</span>
+                        {% else %}
+                        <span class="tcs-badge secondary-badge"><i class="fas fa-plus-circle"></i> {{ "تعيين إضافي" if lang=="ar" else "Additional" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-university"></i>
+                <p>{{ "لم يتم تعيينك في أي كلية أو قسم بعد - تواصل مع إدارة المنصة" if lang=="ar" else "Not assigned to any college yet - contact admin" }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_courses') }}'">
+            <div class="dash-stat-icon courses-icon"><i class="fas fa-book"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ courses|length }}</span><span class="dash-stat-label">{{ "مقرراتي" if lang=="ar" else "My Courses" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_lectures') }}'">
+            <div class="dash-stat-icon lectures-icon"><i class="fas fa-video"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_lectures }}</span><span class="dash-stat-label">{{ "المحاضرات" if lang=="ar" else "Lectures" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_tests') }}'">
+            <div class="dash-stat-icon tests-icon"><i class="fas fa-clipboard-check"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_tests }}</span><span class="dash-stat-label">{{ "الاختبارات" if lang=="ar" else "Tests" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_students_tracking') }}'">
+            <div class="dash-stat-icon students-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ total_students }}</span><span class="dash-stat-label">{{ "الطلاب" if lang=="ar" else "Students" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_send_announcement') }}'">
+            <div class="dash-stat-icon users-icon"><i class="fas fa-bell"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-num">{{ announcements_sent }}</span><span class="dash-stat-label">{{ "التنبيهات" if lang=="ar" else "Alerts" }}</span></div>
+        </div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for('teacher_student_rewards') }}'">
+            <div class="dash-stat-icon teachers-icon"><i class="fas fa-trophy"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-label">{{ "الجوائز" if lang=="ar" else "Rewards" }}</span></div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-book-open"></i> {{ "مقرراتي الدراسية" if lang=="ar" else "My Courses" }}</h3>
+                <a href="{{ url_for('teacher_courses') }}" class="btn btn-sm btn-primary btn-3d">{{ "عرض الكل" if lang=="ar" else "View All" }}</a></div>
+            <div class="dash-card-body">
+                {% if courses %}
+                {% for c in courses %}
+                <div class="course-mini-card card-3d" onclick="window.location.href='{{ url_for('course_detail', id=c.id) }}'">
+                    <div class="cmc-icon"><i class="fas fa-book"></i></div>
+                    <div class="cmc-info">
+                        <h4>{{ c.name }}</h4>
+                        <span>{{ c.code or "" }} - {{ "محاضرات: " if lang=="ar" else "Lectures: " }}{{ c.lectures.count() }} | {{ "اختبارات: " if lang=="ar" else "Tests: " }}{{ c.tests.count() }}</span>
+                    </div>
+                    <div class="cmc-actions">
+                        <a href="{{ url_for('add_lecture', id=c.id) }}" class="btn btn-sm btn-success btn-3d" onclick="event.stopPropagation()" title="{{ 'إضافة محاضرة' if lang=='ar' else 'Add Lecture' }}"><i class="fas fa-plus"></i></a>
+                    </div>
+                    <i class="fas fa-chevron-left cmc-arrow"></i>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state"><i class="fas fa-book-open"></i><p>{{ "لا توجد مقررات مسندة إليك" if lang=="ar" else "No courses assigned" }}</p></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-bolt"></i> {{ "إجراءات سريعة" if lang=="ar" else "Quick Actions" }}</h3></div>
+            <div class="dash-card-body quick-actions">
+                <a href="{{ url_for('admin_add_test') }}" class="qa-btn"><i class="fas fa-plus-circle"></i><span>{{ "إضافة اختبار" if lang=="ar" else "Add Test" }}</span></a>
+                <a href="{{ url_for('teacher_send_announcement') }}" class="qa-btn"><i class="fas fa-paper-plane"></i><span>{{ "إرسال تنبيه" if lang=="ar" else "Send Alert" }}</span></a>
+                <a href="{{ url_for('teacher_students_tracking') }}" class="qa-btn"><i class="fas fa-chart-bar"></i><span>{{ "متابعة الطلاب" if lang=="ar" else "Track Students" }}</span></a>
+                <a href="{{ url_for('teacher_student_rewards') }}" class="qa-btn"><i class="fas fa-gift"></i><span>{{ "منح جائزة" if lang=="ar" else "Grant Reward" }}</span></a>
+                <a href="{{ url_for('teacher_lectures') }}" class="qa-btn"><i class="fas fa-cloud-upload-alt"></i><span>{{ "رفع محاضرة" if lang=="ar" else "Upload Lecture" }}</span></a>
+                <a href="{{ url_for('teacher_courses') }}" class="qa-btn"><i class="fas fa-list-alt"></i><span>{{ "مقرراتي" if lang=="ar" else "My Courses" }}</span></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.teacher-colleges-section{margin-bottom:28px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--white);box-shadow:0 4px 20px rgba(13,43,107,0.08)}
+.tcs-header{display:flex;align-items:center;gap:14px;padding:18px 24px;background:linear-gradient(135deg,rgba(13,43,107,0.06),rgba(232,168,56,0.06))}
+.tcs-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.tcs-header h2{flex:1;font-size:18px;font-weight:800;color:var(--primary);margin:0}
+.tcs-count{font-size:13px;color:var(--text-light);font-weight:600;padding:4px 14px;border-radius:20px;background:rgba(13,43,107,0.06)}
+.tcs-body{padding:20px 24px}
+.tcs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.tcs-card{display:flex;align-items:center;gap:14px;padding:18px;border-radius:var(--radius-sm);border:1px solid var(--border);transition:var(--transition)}
+.tcs-card:hover{box-shadow:0 4px 16px rgba(13,43,107,0.1);transform:translateY(-2px)}
+.tcs-card.primary{border-right:4px solid var(--primary);background:linear-gradient(135deg,rgba(13,43,107,0.02),rgba(13,43,107,0.01))}
+.tcs-card.secondary{border-right:4px solid var(--accent);background:linear-gradient(135deg,rgba(232,168,56,0.02),rgba(232,168,56,0.01))}
+[dir="ltr"] .tcs-card.primary{border-right:none;border-left:4px solid var(--primary)}
+[dir="ltr"] .tcs-card.secondary{border-right:none;border-left:4px solid var(--accent)}
+.tcs-card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.tcs-card.primary .tcs-card-icon{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff}
+.tcs-card.secondary .tcs-card-icon{background:linear-gradient(135deg,var(--accent),var(--accent-light));color:var(--primary-dark)}
+.tcs-card-info h4{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.tcs-parent,.tcs-year{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-light);margin-right:10px}
+.tcs-parent i,.tcs-year i{color:var(--accent);font-size:12px}
+.tcs-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px}
+.primary-badge{background:rgba(13,43,107,0.08);color:var(--primary)}
+.secondary-badge{background:rgba(232,168,56,0.1);color:#e65100}
+</style>
+{% endblock %}

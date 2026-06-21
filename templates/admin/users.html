@@ -1,0 +1,120 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "إدارة المستخدمين" if lang=="ar" else "User Management" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <span>{{ "إدارة المستخدمين" if lang=="ar" else "User Management" }}</span>
+        </div>
+    </div>
+
+    <div class="dashboard-header">
+        <h1><i class="fas fa-users-cog"></i> {{ "إدارة المستخدمين" if lang=="ar" else "User Management" }}</h1>
+    </div>
+
+    <div class="action-bar" style="justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px;">
+        <div class="action-group">
+            <a href="{{ url_for('admin_add_user') }}" class="btn btn-primary btn-3d"><i class="fas fa-user-plus"></i> {{ "إضافة مستخدم" if lang=="ar" else "Add User" }}</a>
+            <a href="{{ url_for('admin_upload_excel') }}" class="btn btn-info btn-3d"><i class="fas fa-file-excel"></i> {{ "استيراد إكسل" if lang=="ar" else "Import Excel" }}</a>
+        </div>
+        <div class="action-group">
+            <select id="typeFilter" class="form-control" style="width: auto; min-width: 150px;">
+                <option value="">{{ "جميع الأنواع" if lang=="ar" else "All Types" }}</option>
+                <option value="admin">{{ "مدير" if lang=="ar" else "Admin" }}</option>
+                <option value="teacher">{{ "مدرس" if lang=="ar" else "Teacher" }}</option>
+                <option value="student">{{ "طالب" if lang=="ar" else "Student" }}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="dash-card card-3d">
+        <div class="dash-card-body">
+            <div style="overflow-x: auto;">
+                <table id="usersTable" class="display table table-bordered" style="width:100%; background: white; border-radius: 10px;">
+                    <thead style="background: var(--primary); color: white;">
+                        <tr>
+                            <th>#</th>
+                            <th>{{ "الاسم الكامل" if lang=="ar" else "Full Name" }}</th>
+                            <th>{{ "اسم المستخدم" if lang=="ar" else "Username" }}</th>
+                            <th>{{ "النوع" if lang=="ar" else "Type" }}</th>
+                            <th>{{ "الرقم الجامعي" if lang=="ar" else "Number" }}</th>
+                            <th>{{ "الموبايل" if lang=="ar" else "Mobile" }}</th>
+                            <th>{{ "الحالة" if lang=="ar" else "Status" }}</th>
+                            <th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button onclick="window.history.back()" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</button>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-info btn-3d"><i class="fas fa-tachometer-alt"></i> {{ "لوحة التحكم" if lang=="ar" else "Dashboard" }}</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- مكتبات DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const lang = "{{ lang }}";
+    const dtLang = lang === 'ar' ? {
+        "sProcessing": "جارٍ التحميل...",
+        "sLengthMenu": "أظهر _MENU_ سجل",
+        "sZeroRecords": "لم يعثر على أية سجلات",
+        "sInfo": "إظهار _START_ إلى _END_ من أصل _TOTAL_ سجل",
+        "sInfoEmpty": "يعرض 0 إلى 0 من أصل 0 سجل",
+        "sInfoFiltered": "(منتقاة من مجموع _MAX_ سجل)",
+        "sSearch": "بحث سريع:",
+        "oPaginate": {
+            "sFirst": "الأول", "sPrevious": "السابق", "sNext": "التالي", "sLast": "الأخير"
+        }
+    } : {};
+
+    const table = #usersTable.DataTable({
+        serverSide: true,
+        ajax: function(data, callback, settings) {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const params = new URLSearchParams({
+                draw: data.draw,
+                start: data.start,
+                length: data.length,
+                'search[value]': data.search.value,
+                type: typeFilter
+            });
+            fetch({{ url_for('admin_users_data') }}? + params.toString())
+                .then(res => res.json())
+                .then(data => callback(data))
+                .catch(err => console.error('Error fetching data:', err));
+        },
+        columns: [
+            { data: 0, render: (data, type, row, meta) => meta.row + meta.settings._iDisplayStart + 1 },
+            { data: 1 },
+            { data: 2 },
+            { data: 3 },
+            { data: 4 },
+            { data: 5 },
+            { data: 6 },
+            { data: 7, orderable: false }
+        ],
+        order: [[1, 'asc']],
+        language: dtLang,
+        lengthMenu: [10, 25, 50, 100],
+        pageLength: 50
+    });
+
+    document.getElementById('typeFilter').addEventListener('change', function() {
+        table.ajax.reload();
+    });
+});
+</script>
+{% endblock %}

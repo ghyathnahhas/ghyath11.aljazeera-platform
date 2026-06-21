@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ "إدارة الإحصائيات" if lang=="ar" else "Statistics" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "الإحصائيات" if lang=="ar" else "Statistics" }}</span></div></div>
+    <div class="dashboard-header"><h1><i class="fas fa-chart-bar"></i> {{ "إدارة الإحصائيات" if lang=="ar" else "Statistics Management" }}</h1></div>
+    <div class="dashboard-stats">
+        <div class="dash-stat card-3d"><div class="dash-stat-icon users-icon"><i class="fas fa-users"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.total_users }}</span><span class="dash-stat-label">{{ "إجمالي المستخدمين" if lang=="ar" else "Total Users" }}</span></div></div>
+        <div class="dash-stat card-3d"><div class="dash-stat-icon students-icon"><i class="fas fa-user-graduate"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.students }}</span><span class="dash-stat-label">{{ "الطلاب" if lang=="ar" else "Students" }}</span></div></div>
+        <div class="dash-stat card-3d"><div class="dash-stat-icon teachers-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.teachers }}</span><span class="dash-stat-label">{{ "المدرسين" if lang=="ar" else "Teachers" }}</span></div></div>
+        <div class="dash-stat card-3d"><div class="dash-stat-icon courses-icon"><i class="fas fa-book"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.courses }}</span><span class="dash-stat-label">{{ "المقررات" if lang=="ar" else "Courses" }}</span></div></div>
+        <div class="dash-stat card-3d"><div class="dash-stat-icon tests-icon"><i class="fas fa-clipboard-check"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.tests }}</span><span class="dash-stat-label">{{ "الاختبارات" if lang=="ar" else "Tests" }}</span></div></div>
+        <div class="dash-stat card-3d"><div class="dash-stat-icon lectures-icon"><i class="fas fa-video"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ stats.lectures }}</span><span class="dash-stat-label">{{ "المحاضرات" if lang=="ar" else "Lectures" }}</span></div></div>
+    </div>
+    <div class="dashboard-grid">
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-building"></i> {{ "إحصائيات الكليات" if lang=="ar" else "College Stats" }}</h3></div>
+            <div class="dash-card-body">
+                <table class="data-table compact"><thead><tr><th>{{ "الكلية" if lang=="ar" else "College" }}</th><th>{{ "الأقسام" if lang=="ar" else "Depts" }}</th><th>{{ "السنوات" if lang=="ar" else "Years" }}</th><th>{{ "المقررات" if lang=="ar" else "Courses" }}</th></tr></thead>
+                <tbody>{% for c in colleges_stats %}<tr><td>{{ c.name }}</td><td>{{ c.departments }}</td><td>{{ c.years }}</td><td>{{ c.courses }}</td></tr>{% endfor %}</tbody></table>
+            </div>
+        </div>
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-chart-pie"></i> {{ "أنواع الاختبارات" if lang=="ar" else "Test Types" }}</h3></div>
+            <div class="dash-card-body">
+                {% for ttype, count in test_type_stats.items() %}
+                <div class="stat-bar-item"><span>{{ ttype }}</span><div class="stat-bar"><div class="stat-bar-fill" style="width:{{ count }}%"></div></div><span>{{ count }}</span></div>
+                {% endfor %}
+                {% if not test_type_stats %}<div class="empty-state"><p>{{ "لا توجد بيانات" if lang=="ar" else "No data" }}</p></div>{% endif %}
+            </div>
+        </div>
+        
+        <!-- بطاقة المستخدمين مع نظام التقسيم -->
+        <div class="dash-card card-3d" style="grid-column: 1 / -1;">
+            <div class="dash-card-header"><h3><i class="fas fa-user-check"></i> {{ "المستخدمون المسجلون (التفاصيل)" if lang=="ar" else "Registered Users (Details)" }}</h3></div>
+            <div class="dash-card-body">
+                <div style="overflow-x: auto;">
+                    <table class="data-table compact">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>{{ "الاسم الكامل" if lang=="ar" else "Full Name" }}</th>
+                                <th>{{ "اسم المستخدم" if lang=="ar" else "Username" }}</th>
+                                <th>{{ "الصلاحية" if lang=="ar" else "Role" }}</th>
+                                <th>{{ "الرقم الجامعي" if lang=="ar" else "Number" }}</th>
+                                <th>{{ "تاريخ التسجيل" if lang=="ar" else "Registered At" }}</th>
+                                <th>{{ "عدد مرات الدخول" if lang=="ar" else "Login Count" }}</th>
+                                <th>{{ "آخر دخول للمنصة" if lang=="ar" else "Last Login" }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in registered_users.items %}
+                            <tr>
+                                <!-- حساب الترقيم الصحيح عبر الصفحات -->
+                                <td>{{ (registered_users.page - 1) * registered_users.per_page + loop.index }}</td>
+                                <td>{{ user.first_name }} {{ user.second_name }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>
+                                    {% if user.user_type == 'admin' %}
+                                        {{ "مدير" if lang=="ar" else "Admin" }}
+                                    {% elif user.user_type == 'teacher' %}
+                                        {{ "مدرس" if lang=="ar" else "Teacher" }}
+                                    {% elif user.user_type == 'student' %}
+                                        {{ "طالب" if lang=="ar" else "Student" }}
+                                    {% else %}
+                                        {{ "ضيف" if lang=="ar" else "Guest" }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.number or '-' }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+                                <td>{{ user.login_count or 0 }}</td>
+                                <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else 'لم يدخل بعد' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center;">{{ "لا يوجد مستخدمون مسجلون بعد" if lang=="ar" else "No registered users yet" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- أزرار التنقل بين الصفحات (Pagination) -->
+                {% if registered_users.pages > 1 %}
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                    {% if registered_users.has_prev %}
+                        <a href="{{ url_for('admin_statistics', page=registered_users.prev_num) }}" class="btn btn-secondary btn-3d" style="min-width: 120px;">
+                            <i class="fas fa-arrow-right"></i> {{ "السابق" if lang=="ar" else "Previous" }}
+                        </a>
+                    {% endif %}
+
+                    <span style="font-weight: bold; color: #555;">
+                        {{ "صفحة" if lang=="ar" else "Page" }} {{ registered_users.page }} {{ "من" if lang=="ar" else "of" }} {{ registered_users.pages }}
+                    </span>
+
+                    {% if registered_users.has_next %}
+                        <a href="{{ url_for('admin_statistics', page=registered_users.next_num) }}" class="btn btn-primary btn-3d" style="min-width: 120px;">
+                            {{ "التالي" if lang=="ar" else "Next" }} <i class="fas fa-arrow-left"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+    <div class="action-bar">
+        <button onclick="window.history.back()" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</button>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

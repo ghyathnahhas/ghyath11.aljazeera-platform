@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ "اختباراتي" if lang=="ar" else "My Tests" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for('student_dashboard') }}">{{ "لوحة الطالب" if lang=="ar" else "Dashboard" }}</a>
+            <span>{{ "اختباراتي" if lang=="ar" else "My Tests" }}</span>
+        </div>
+    </div>
+
+    {% if tests %}
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ "اسم الاختبار" if lang=="ar" else "Test Name" }}</th>
+                    <th>{{ "المقرر" if lang=="ar" else "Course" }}</th>
+                    <th>{{ "النوع" if lang=="ar" else "Type" }}</th>
+                    <th>{{ "المدة" if lang=="ar" else "Duration" }}</th>
+                    <th>{{ "موعد التسليم" if lang=="ar" else "Deadline" }}</th>
+                    <th>{{ "الحالة" if lang=="ar" else "Status" }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in tests %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><strong>{{ test.name }}</strong></td>
+                    <td>{{ test.course.name if test.course else "-" }}</td>
+                    <td><span class="type-badge {{ test.test_type }}">{{ translate_test_type(test.test_type, lang) }}</span></td>
+                    <td>{{ test.duration_minutes }} {{ "دقيقة" if lang=="ar" else "min" }}</td>
+                    <td>{{ test.deadline.strftime("%Y-%m-%d %H:%M") if test.deadline else "-" }}</td>
+                    <td>
+                        {% if test.id in taken_test_ids %}
+                            <span class="badge-score good"><i class="fas fa-check-circle"></i> {{ "تم الأداء" if lang=="ar" else "Done" }}</span>
+                        {% else %}
+                            <a href="{{ url_for('student_take_test', id=test.id) }}" class="btn btn-sm btn-success btn-3d">
+                                <i class="fas fa-pen"></i> {{ "أداء الاختبار" if lang=="ar" else "Take Test" }}
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state card-3d" style="padding:60px; text-align:center;">
+        <i class="fas fa-clipboard-check" style="font-size:64px; color:#ccc; margin-bottom:20px; display:block;"></i>
+        <h3 style="color:var(--primary);">{{ "لا توجد اختبارات متاحة حالياً" if lang=="ar" else "No Tests Available" }}</h3>
+    </div>
+    {% endif %}
+
+    <div class="action-bar">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for('index') }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

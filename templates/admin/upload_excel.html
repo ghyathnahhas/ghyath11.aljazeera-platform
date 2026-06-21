@@ -1,0 +1,29 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "استيراد مستخدمين من Excel" if lang=="ar" else "Import Users from Excel" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ url_for("admin_users") }}">{{ "المستخدمين" if lang=="ar" else "Users" }}</a><span>{{ "استيراد Excel" if lang=="ar" else "Import" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-file-excel"></i> {{ "استيراد مستخدمين من ملف Excel" if lang=="ar" else "Import Users from Excel" }}</h2></div>
+        <div style="margin-bottom:20px;">
+            <a href="{{ url_for("admin_download_template") }}" class="btn btn-info btn-3d"><i class="fas fa-download"></i> {{ "تحميل نموذج Excel" if lang=="ar" else "Download Template" }}</a>
+        </div>
+        <form method="POST" enctype="multipart/form-data" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>{{ "اختر ملف Excel" if lang=="ar" else "Choose Excel File" }}</label>
+                <input type="file" name="excel_file" accept=".xlsx,.xls" class="form-control input-3d" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-upload"></i> {{ "استيراد" if lang=="ar" else "Import" }}</button>
+                <a href="{{ url_for("admin_users") }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("admin_users") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+

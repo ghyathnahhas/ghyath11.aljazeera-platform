@@ -1,0 +1,41 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "ملفي" if lang=="ar" else "Profile" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "ملفي" if lang=="ar" else "Profile" }}</span></div></div>
+    <div class="profile-grid">
+        <div class="profile-card card-3d">
+            <div class="profile-avatar"><i class="fas fa-user-graduate"></i></div>
+            <h2>{{ student.full_name }}</h2>
+            <div class="profile-info-list">
+                <div class="pi-item"><i class="fas fa-id-badge"></i><span>{{ "الرقم الجامعي" if lang=="ar" else "ID" }}: {{ student.number or "-" }}</span></div>
+                <div class="pi-item"><i class="fas fa-user-tag"></i><span>{{ "نوع المستخدم" if lang=="ar" else "Type" }}: {{ student.user_type }}</span></div>
+                <div class="pi-item"><i class="fas fa-phone"></i><span>{{ "الموبايل" if lang=="ar" else "Mobile" }}: {{ student.mobile or "-" }}</span></div>
+                {% if college %}<div class="pi-item"><i class="fas fa-university"></i><span>{{ "الكلية" if lang=="ar" else "College" }}: {{ college.name }}</span></div>{% endif %}
+                <div class="pi-item"><i class="fas fa-calendar"></i><span>{{ "تاريخ التسجيل" if lang=="ar" else "Registered" }}: {{ student.created_at.strftime("%Y-%m-%d") }}</span></div>
+            </div>
+        </div>
+        <div class="profile-stats-card card-3d">
+            <h3><i class="fas fa-chart-line"></i> {{ "الإحصائيات" if lang=="ar" else "Statistics" }}</h3>
+            <div class="profile-stat-row"><span>{{ "المقررات المسجلة" if lang=="ar" else "Courses" }}</span><span class="ps-num">{{ enrollments|length }}</span></div>
+            <div class="profile-stat-row"><span>{{ "المعدل العام" if lang=="ar" else "Average" }}</span><span class="ps-num {% if avg_score >= 80 %}text-success{% elif avg_score >= 60 %}text-warning{% else %}text-danger{% endif %}">{{ avg_score }}%</span></div>
+        </div>
+    </div>
+    <div class="detail-card card-3d" style="margin-top:20px;">
+        <div class="detail-header"><div class="detail-icon"><i class="fas fa-history"></i></div><h2>{{ "سجل النشاطات" if lang=="ar" else "Activity Log" }}</h2></div>
+        <div class="detail-body">
+            {% if tracking %}
+            <div class="timeline">
+                {% for t in tracking %}
+                <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><span class="tl-action">{{ t.action_type }}</span><span class="tl-time">{{ t.created_at.strftime("%Y-%m-%d %H:%M") }}</span>{% if t.action_details %}<p>{{ t.action_details }}</p>{% endif %}</div></div>
+                {% endfor %}
+            </div>
+            {% else %}<div class="empty-state"><p>{{ "لا توجد نشاطات" if lang=="ar" else "No activities" }}</p></div>{% endif %}
+        </div>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("student_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

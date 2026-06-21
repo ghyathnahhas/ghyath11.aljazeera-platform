@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}إدارة تسجيلات الطلاب{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for('admin_dashboard') }}">لوحة التحكم</a>
+            <span>إدارة تسجيلات الطلاب</span>
+        </div>
+    </div>
+
+    <div class="card-3d" style="padding:20px; margin-bottom:20px;">
+        <h3><i class="fas fa-file-excel text-success"></i> رفع ملف الإكسل للموافقة الجماعية</h3>
+        <p style="color:#888; font-size:0.9rem;">يجب أن يحتوي الملف على: الرقم الجامعي، الاسم، الكلية، السنة، الفصل، اسم المقرر</p>
+        <form action="{{ url_for('upload_enrollment_excel') }}" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; margin-top:15px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="excel_file" required class="form-control">
+            <button type="submit" class="btn btn-success btn-3d"><i class="fas fa-upload"></i> رفع وموافقة</button>
+        </form>
+    </div>
+
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>الطالب</th>
+                    <th>المقرر</th>
+                    <th>تاريخ الطلب</th>
+                    <th>الحالة</th>
+                    <th>إجراء</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enr in enrollments %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ enr.get_student_name() }}</td>
+                    <td>{{ enr.get_course_name() }}</td>
+                    <td>{{ enr.enrolled_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if enr.is_approved %}
+                        <span class="badge-score good">موافق عليه</span>
+                        {% else %}
+                        <span class="badge-score fail">بانتظار الموافقة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not enr.is_approved %}
+                        <form action="{{ url_for('approve_enrollment', id=enr.id) }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-success btn-3d"><i class="fas fa-check"></i> موافقة</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

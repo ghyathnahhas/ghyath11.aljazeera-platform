@@ -1,0 +1,48 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "لوحة الطالب" if lang=="ar" else "Student Dashboard" }}{% endblock %}
+{% block content %}
+<section class="dashboard-section">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-graduation-cap"></i> {{ "لوحة الطالب" if lang=="ar" else "Student Panel" }}</h1>
+        <div class="student-info-bar">
+            <span><i class="fas fa-id-badge"></i> {{ "الرقم الجامعي" if lang=="ar" else "ID" }}: {{ student.number or "-" }}</span>
+            <span><i class="fas fa-user"></i> {{ student.full_name }}</span>
+            {% if student.college %}<span><i class="fas fa-university"></i> {{ student.college.name }}</span>{% endif %}
+            {% if student.study_year %}<span class="year-badge-student"><i class="fas fa-graduation-cap"></i> {{ student.study_year }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="dashboard-stats">
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_courses") }}'"><div class="dash-stat-icon courses-icon"><i class="fas fa-book-open"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ courses|length }}</span><span class="dash-stat-label">{{ "مقرراتي" if lang=="ar" else "Courses" }}</span></div></div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_tests") }}'"><div class="dash-stat-icon tests-icon"><i class="fas fa-clipboard-list"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ total_tests_taken }}</span><span class="dash-stat-label">{{ "الاختبارات" if lang=="ar" else "Tests" }}</span></div></div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_results") }}'"><div class="dash-stat-icon students-icon"><i class="fas fa-chart-line"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ avg_score }}%</span><span class="dash-stat-label">{{ "المعدل" if lang=="ar" else "Average" }}</span></div></div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_messages") }}'"><div class="dash-stat-icon users-icon"><i class="fas fa-envelope"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ unread_msgs }}</span><span class="dash-stat-label">{{ "رسائل جديدة" if lang=="ar" else "New Msgs" }}</span></div></div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_rewards") }}'"><div class="dash-stat-icon teachers-icon"><i class="fas fa-trophy"></i></div><div class="dash-stat-info"><span class="dash-stat-num">{{ total_points }}</span><span class="dash-stat-label">{{ "النقاط" if lang=="ar" else "Points" }}</span></div></div>
+        <div class="dash-stat card-3d" onclick="window.location.href='{{ url_for("student_assignments") }}'"><div class="dash-stat-icon lectures-icon"><i class="fas fa-tasks"></i></div><div class="dash-stat-info"><span class="dash-stat-label">{{ "الواجبات" if lang=="ar" else "Assignments" }}</span></div></div>
+    </div>
+    <div class="dashboard-grid">
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-book-open"></i> {{ "مقرراتي الدراسية" if lang=="ar" else "My Courses" }}</h3></div>
+            <div class="dash-card-body">
+                {% for c in courses %}
+                <div class="course-mini-card card-3d" onclick="window.location.href='{{ url_for("student_course_detail", id=c.id) }}'">
+                    <div class="cmc-icon"><i class="fas fa-book"></i></div>
+                    <div class="cmc-info"><h4>{{ c.name }}</h4><span>{{ c.code or "" }} - {{ c.teacher.full_name if c.teacher else "" }}</span></div>
+                    <i class="fas fa-chevron-left cmc-arrow"></i>
+                </div>
+                {% endfor %}
+                {% if not courses %}<div class="empty-state"><p>{{ "لا توجد مقررات مسجلة" if lang=="ar" else "No enrolled courses" }}</p></div>{% endif %}
+            </div>
+        </div>
+        <div class="dash-card card-3d">
+            <div class="dash-card-header"><h3><i class="fas fa-trophy"></i> {{ "آخر الجوائز" if lang=="ar" else "Recent Rewards" }}</h3></div>
+            <div class="dash-card-body">
+                {% for r in rewards[:5] %}
+                <div class="reward-mini"><i class="fas fa-medal"></i><span>{{ r.reward_name }} (+{{ r.points }})</span></div>
+                {% endfor %}
+                {% if not rewards %}<div class="empty-state"><p>{{ "لا توجد جوائز بعد" if lang=="ar" else "No rewards yet" }}</p></div>{% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

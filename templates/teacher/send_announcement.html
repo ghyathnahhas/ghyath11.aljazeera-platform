@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "إرسال تنبيهات" if lang=="ar" else "Send Alerts" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "إرسال تنبيهات" if lang=="ar" else "Send Alerts" }}</span></div></div>
+    <div class="form-card card-3d">
+        <div class="form-card-header"><h2><i class="fas fa-bell"></i> {{ "إرسال رسالة تنبيهية للطلاب" if lang=="ar" else "Send Alert to Students" }}</h2></div>
+        <form method="POST" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ "المقرر" if lang=="ar" else "Course" }} <span class="required">*</span></label>
+                    <select name="course_id" class="form-control input-3d" required>
+                        <option value="">-- {{ "اختر المقرر" if lang=="ar" else "Select" }} --</option>
+                        {% for c in courses %}<option value="{{ c.id }}">{{ c.name }} ({{ c.code or "" }})</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>{{ "نوع الرسالة" if lang=="ar" else "Type" }}</label>
+                    <select name="msg_type" class="form-control input-3d">
+                        <option value="general">{{ "عام" if lang=="ar" else "General" }}</option>
+                        <option value="homework">{{ "واجب" if lang=="ar" else "Homework" }}</option>
+                        <option value="quiz">{{ "مذاكرة" if lang=="ar" else "Quiz" }}</option>
+                        <option value="test">{{ "اختبار" if lang=="ar" else "Test" }}</option>
+                        <option value="discussion">{{ "مناقشة" if lang=="ar" else "Discussion" }}</option>
+                        <option value="online">{{ "Online" }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>{{ "العنوان" if lang=="ar" else "Title" }}</label><input type="text" name="title" class="form-control input-3d"></div>
+                <div class="form-group">
+                    <label>{{ "الأولوية" if lang=="ar" else "Priority" }}</label>
+                    <select name="priority" class="form-control input-3d">
+                        <option value="normal">{{ "عادي" if lang=="ar" else "Normal" }}</option>
+                        <option value="warning">{{ "تحذير" if lang=="ar" else "Warning" }}</option>
+                        <option value="urgent">{{ "عاجل" if lang=="ar" else "Urgent" }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>{{ "نص الرسالة" if lang=="ar" else "Message" }} <span class="required">*</span></label><textarea name="message" class="form-control input-3d" rows="5" required></textarea></div>
+            <div class="form-group"><label>{{ "موعد التسليم (اختياري)" if lang=="ar" else "Deadline (optional)" }}</label><input type="datetime-local" name="deadline" class="form-control input-3d"></div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-paper-plane"></i> {{ "إرسال" if lang=="ar" else "Send" }}</button>
+                <a href="{{ url_for("teacher_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+    <div class="action-bar">
+        <a href="{{ url_for("teacher_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}
+

@@ -1,0 +1,62 @@
+import os
+import sys
+import sqlite3
+
+db_path = os.path.join(os.path.dirname(__file__), 'university.db')
+print(f"مسار قاعدة البيانات: {db_path}")
+print(f"موجودة: {os.path.exists(db_path)}")
+
+if not os.path.exists(db_path):
+    print("قاعدة البيانات غير موجودة! شغّل python database\init_db.py أولاً")
+    sys.exit(1)
+
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+# التحقق من الأعمدة الموجودة
+cursor.execute("PRAGMA table_info(users)")
+existing_cols = [row[1] for row in cursor.fetchall()]
+print(f"الأعمدة الحالية في users: {existing_cols}")
+
+# إضافة study_year إذا لم يكن موجوداً
+if 'study_year' not in existing_cols:
+    print("إضافة عمود study_year...")
+    cursor.execute("ALTER TABLE users ADD COLUMN study_year VARCHAR(100)")
+    conn.commit()
+    print("تم إضافة study_year بنجاح!")
+else:
+    print("عمود study_year موجود مسبقاً")
+
+# التحقق من وجود جدول teacher_assignments
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='teacher_assignments'")
+if cursor.fetchone():
+    print("جدول teacher_assignments موجود مسبقاً")
+else:
+    print("إنشاء جدول teacher_assignments...")
+    cursor.execute('''
+        CREATE TABLE teacher_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER NOT NULL,
+            college_id INTEGER NOT NULL,
+            study_year_id INTEGER,
+            is_active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (teacher_id) REFERENCES users(id),
+            FOREIGN KEY (college_id) REFERENCES colleges(id),
+            FOREIGN KEY (study_year_id) REFERENCES study_years(id),
+            UNIQUE(teacher_id, college_id, study_year_id)
+        )
+    ''')
+    conn.commit()
+    print("تم إنشاء teacher_assignments بنجاح!")
+
+# التحقق النهائي
+cursor.execute("PRAGMA table_info(users)")
+final_cols = [row[1] for row in cursor.fetchall()]
+print(f"الأعمدة النهائية في users: {final_cols}")
+
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='teacher_assignments'")
+print(f"جدول teacher_assignments: {'موجود' if cursor.fetchone() else 'مفقود'}")
+
+conn.close()
+print("\nتم الإصلاح بنجاح! يمكنك الآن تشغيل python app.py")

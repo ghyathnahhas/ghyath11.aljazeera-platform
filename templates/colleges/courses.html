@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ course.name }}<div style="margin-bottom: 20px; text-align: left;">
+    {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_teacher) %}
+    <a href="{{ url_for('virtual_classroom', course_id=course.id) }}" class="btn btn-primary btn-3d btn-lg">
+        <i class="fas fa-chalkboard-teacher"></i> {{ "الغرفة الافتراضية" if lang=="ar" else "Virtual Class" }}
+    </a>
+    {% endif %}
+</div> {% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a>
+            <span>{{ course.name }}</span>
+        </div>
+    </div>
+    <div class="detail-card card-3d">
+        <div class="detail-header">
+            <div class="detail-icon"><i class="fas fa-book"></i></div>
+            <div class="detail-title-area">
+                <h1>{{ course.name if lang=="ar" else (course.name_en or course.name) }}</h1>
+                <p>{{ "الرمز: " if lang=="ar" else "Code: " }}<span class="badge-code">{{ course.code or "-" }}</span>
+                {% if course.teacher %} | {{ "المدرس: " if lang=="ar" else "Teacher: " }}{{ course.teacher.full_name }}{% endif %}</p>
+                <p>{{ course.description or "" }}</p>
+            </div>
+        </div>
+        <div class="detail-body">
+            <h3 class="sub-title"><i class="fas fa-video"></i> {{ "المحاضرات الدراسية" if lang=="ar" else "Lectures" }}</h3>
+            {% if course.lectures|count_items > 0 %}
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead><tr><th>#</th><th>{{ "اسم المحاضرة" if lang=="ar" else "Lecture" }}</th><th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th></tr></thead>
+                    <tbody>
+                        {% for lec in course.lectures %}
+                        <tr><td>{{ loop.index }}</td><td>{{ lec.name }}</td>
+                        <td>
+                            <a href="{{ url_for("lecture_detail", id=lec.id) }}" class="btn btn-sm btn-info btn-3d"><i class="fas fa-eye"></i></a>
+                            {% if current_user.is_authenticated and current_user.can_manage %}
+                            <a href="{{ url_for("edit_lecture", id=lec.id) }}" class="btn btn-sm btn-warning btn-3d"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if current_user.is_authenticated and current_user.is_admin %}
+                            <button onclick="confirmDelete('{{ url_for("delete_lecture", id=lec.id) }}')" class="btn btn-sm btn-danger btn-3d"><i class="fas fa-trash"></i></button>
+                            {% endif %}
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state"><i class="fas fa-inbox"></i><p>{{ "لا توجد محاضرات" if lang=="ar" else "No lectures" }}</p></div>
+            {% endif %}
+            {% if current_user.is_authenticated and current_user.can_manage %}
+            <div style="margin-top:20px;">
+                <a href="{{ url_for("add_lecture", id=course.id) }}" class="btn btn-primary btn-3d"><i class="fas fa-plus"></i> {{ "إضافة محاضرة جديدة" if lang=="ar" else "Add Lecture" }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="action-bar">
+        {% if current_user.is_authenticated and current_user.can_manage %}
+        <a href="{{ url_for("edit_course", id=course.id) }}" class="btn btn-warning btn-3d"><i class="fas fa-edit"></i> {{ "التعديل" if lang=="ar" else "Edit" }}</a>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <button onclick="confirmDelete('{{ url_for("delete_course", id=course.id) }}')" class="btn btn-danger btn-3d"><i class="fas fa-trash"></i> {{ "الحذف" if lang=="ar" else "Delete" }}</button>
+        {% endif %}
+        
+        <!-- ✅ التعديل الوحيد: استبدال window.history.back بالرابط المباشر للفصل الدراسي -->
+        <a href="{{ url_for("semester_detail", id=course.semester_id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "تعديل" if lang=="ar" else "Edit" }} - {{ college.name }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a>
+            <span>{{ "تعديل" if lang=="ar" else "Edit" }}</span>
+        </div>
+    </div>
+    <div class="form-card card-3d">
+        <div class="form-card-header">
+            <h2><i class="fas fa-edit"></i> {{ "تعديل" if lang=="ar" else "Edit" }}: {{ college.name }}</h2>
+        </div>
+        <form method="POST" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>{{ "اسم الكلية/القسم" if lang=="ar" else "Name" }} <span class="required">*</span></label>
+                <input type="text" name="name" class="form-control input-3d" value="{{ college.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>{{ "الوصف" if lang=="ar" else "Description" }}</label>
+                <textarea name="description" class="form-control input-3d" rows="4">{{ college.description or "" }}</textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-save"></i> {{ "حفظ" if lang=="ar" else "Save" }}</button>
+                <a href="{{ url_for("college_detail", id=college.parent_id or college.id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+

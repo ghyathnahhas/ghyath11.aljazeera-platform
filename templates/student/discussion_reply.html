@@ -1,0 +1,13 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "المناقشة" if lang=="ar" else "Discussion" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ url_for("student_assignments") }}">{{ "الواجبات" if lang=="ar" else "Assignments" }}</a><span>{{ "مناقشة" if lang=="ar" else "Discussion" }}</span></div></div>
+    <div class="detail-card card-3d"><div class="detail-header"><div class="detail-icon"><i class="fas fa-comments"></i></div><div class="detail-title-area"><h1>{{ announcement.title or "مناقشة" }}</h1><p>{{ announcement.message }}</p></div></div>
+    <div class="detail-body"><h3 class="sub-title"><i class="fas fa-reply"></i> {{ "أضف ردك" if lang=="ar" else "Add Reply" }}</h3>
+        <form method="POST" class="entity-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="form-group"><label>{{ "الرد" if lang=="ar" else "Reply" }}</label><textarea name="reply" class="form-control input-3d" rows="5" required></textarea></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-reply"></i> {{ "إرسال الرد" if lang=="ar" else "Send" }}</button><a href="{{ url_for("student_assignments") }}" class="btn btn-secondary btn-3d"><i class="fas fa-times"></i> {{ "إلغاء" if lang=="ar" else "Cancel" }}</a></div></form>
+    </div></div>
+    <div class="action-bar"><a href="{{ url_for("student_assignments") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

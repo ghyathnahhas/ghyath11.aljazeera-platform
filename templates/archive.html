@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}{{ "الأرشيف الأكاديمي" if lang=="ar" else "Academic Archive" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .archive-filters { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .archive-filters select, .archive-filters button { height: 50px; }
+    .archive-filters select { flex: 1; min-width: 150px; border-radius: 10px; border: 2px solid #e0e0e0; font-weight: bold; padding: 0 15px; background: #fff; }
+    .archive-filters select:focus { border-color: #1a237e; outline: none; }
+
+    /* تصميم الأكورديون السحري */
+    .course-accordion { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid #e0e0e0; }
+    .acc-header { background: linear-gradient(135deg, #1a237e, #283593); color: white; padding: 15px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+    .acc-header:hover { background: linear-gradient(135deg, #0d47a1, #1a237e); padding-right: 30px; }
+    .acc-header h3 { margin: 0; font-size: 1.1em; }
+    .acc-header i { transition: transform 0.3s; font-size: 1.2em; }
+    .course-accordion.active .acc-header i { transform: rotate(180deg); }
+    
+    .acc-body { display: none; padding: 20px; border-top: 3px solid #f0f0f0; }
+    .course-accordion.active .acc-body { display: block; animation: slideDown 0.3s ease-out; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* الأكورديون الداخلي */
+    .sub-acc { margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
+    .sub-acc-header { background: #f8f9fa; padding: 12px 15px; cursor: pointer; font-weight: bold; color: #333; display: flex; justify-content: space-between; border-bottom: 1px solid #e0e0e0; }
+    .sub-acc-header i { color: #1a237e; }
+    .sub-acc-body { display: none; padding: 15px; background: #fff; }
+    .sub-acc.active .sub-acc-body { display: block; }
+    .sub-acc.active .sub-acc-header i { transform: rotate(180deg); }
+
+    .archive-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
+    .archive-item:last-child { border-bottom: none; }
+    .badge-type { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: bold; color: white; }
+    .t-pdf { background: #e74c3c; } .t-ppt { background: #d35400; } .t-video { background: #8e44ad; } .t-audio { background: #2980b9; } .t-link { background: #16a085; }
+    
+    .stats-box { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .stat-card { flex: 1; min-width: 100px; text-align: center; padding: 10px; border-radius: 10px; color: white; font-weight: bold; }
+    .s-pass { background: #2ecc71; } .s-fail { background: #e74c3c; } .s-na { background: #95a5a6; }
+    
+    .student-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+    .student-table th, .student-table td { padding: 8px; border: 1px solid #eee; text-align: center; }
+    .student-table th { background: #f8f9fa; color: #333; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="page-section" style="max-width: 1200px; margin: 0 auto;">
+    <div class="page-header-bar">
+        <div class="breadcrumb"><a href="{{ url_for('index') }}"><i class="fas fa-home"></i></a><span>{{ "الأرشيف الأكاديمي" if lang=="ar" else "Academic Archive" }}</span></div>
+    </div>
+
+    <div class="archive-filters card-3d">
+        <form method="GET" action="{{ url_for('academic_archive') }}" style="display: flex; gap: 15px; flex-wrap: wrap; width: 100%;">
+            <select name="year" required>
+                <option value="">{{ "-- السنة --" if lang=="ar" else "-- Year --" }}</option>
+                {% for year in available_years %}<option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>{% endfor %}
+            </select>
+            
+            <select name="semester">
+                <option value="">{{ "-- كافة الفصول --" if lang=="ar" else "-- All Semesters --" }}</option>
+                {% for val, name in available_semesters %}<option value="{{ val }}" {% if selected_semester == val %}selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+
+            <select name="college_id">
+                <option value="0">{{ "-- كافة الكليات --" if lang=="ar" else "-- All Colleges --" }}</option>
+                {% for item in accessible_college_tree %}
+                    <optgroup label="{{ item.college.name if lang=='ar' else item.college.name_en }}">
+                        <option value="{{ item.college.id }}" {% if selected_college_id == item.college.id %}selected{% endif %}">{{ item.college.name }} (الكلية)</option>
+                        {% for dept in item.departments %}
+                        <option value="{{ dept.id }}" {% if selected_college_id == dept.id %}selected{% endif %}">-- {{ dept.name if lang=='ar' else dept.name_en }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-search"></i> {{ "عرض" if lang=="ar" else "Show" }}</button>
+        </form>
+    </div>
+
+    {% if selected_year %}
+        <h2 style="text-align:center; color:#1a237e; margin-bottom:20px;"><i class="fas fa-archive"></i> {{ "أرشيف العام" if lang=="ar" else "Archive of" }} {{ selected_year }}</h2>
+
+        {% if archived_data %}
+            {% for item in archived_data %}
+            <div class="course-accordion">
+                <div class="acc-header" onclick="toggleAcc(this)">
+                    <h3><i class="fas fa-book-open"></i> {{ item.course.name }} {% if item.course.semester %} <small style="opacity:0.8;">( {{ item.course.semester.name }} )</small> {% endif %}</h3>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                
+                <div class="acc-body">
+                    
+                    <!-- 🌟 إحصائيات الطلاب (تظهر للمدرس والمدير فقط) -->
+                    {% if current_user.is_teacher or current_user.is_admin %}
+                    <div class="stats-box">
+                        <div class="stat-card s-pass"><i class="fas fa-check-circle"></i> {{ item.passed }}<br><small>{{ "ناجح" if lang=="ar" else "Pass" }}</small></div>
+                        <div class="stat-card s-fail"><i class="fas fa-times-circle"></i> {{ item.failed }}<br><small>{{ "راسب" if lang=="ar" else "Fail" }}</small></div>
+                        <div class="stat-card s-na"><i class="fas fa-minus-circle"></i> {{ item.no_result }}<br><small>{{ "لم يختبر" if lang=="ar" else "N/A" }}</small></div>
+                    </div>
+                    {% endif %}
+
+                    <!-- المحاضرات والملفات -->
+                    <div class="sub-acc">
+                        <div class="sub-acc-header" onclick="toggleAcc(this)"><span><i class="fas fa-chalkboard"></i> {{ "المحاضرات والملفات" if lang=="ar" else "Lectures & Files" }} ({{ item.lectures|length }})</span> <i class="fas fa-chevron-down"></i></div>
+                        <div class="sub-acc-body">
+                            {% if item.lectures %}
+                                {% for lec in item.lectures %}
+                                <div class="archive-item">
+                                    <div><i class="fas fa-file-alt" style="color:#1a237e;"></i> <strong>{{ lec.name }}</strong></div>
+                                    <div style="display:flex; gap:3px;">
+                                        {% for f in lec.files.all() %}<span class="badge-type t-{{ f.file_type }}">{{ f.file_type|upper }}</span>{% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}<p style="text-align:center; color:#999; padding:10px;">لا توجد محاضرات</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- الاختبارات -->
+                    <div class="sub-acc">
+                        <div class="sub-acc-header" onclick="toggleAcc(this)"><span><i class="fas fa-clipboard-check"></i> {{ "الاختبارات والأسئلة" if lang=="ar" else "Tests" }} ({{ item.tests|length }})</span> <i class="fas fa-chevron-down"></i></div>
+                        <div class="sub-acc-body">
+                            {% if item.tests %}
+                                {% for test in item.tests %}
+                                <div class="archive-item">
+                                    <div><i class="fas fa-file-signature" style="color:#f39c12;"></i> <strong>{{ test.name }}</strong> <small style="color:#666;">({{ test.test_type or '' }})</small></div>
+                                    <span class="badge-type" style="background:#f39c12;">{{ test.questions.count() }} {{ "سؤال" if lang=="ar" else "Q" }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}<p style="text-align:center; color:#999; padding:10px;">لا توجد اختبارات</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- الجلسات -->
+                    <div class="sub-acc">
+                        <div class="sub-acc-header" onclick="toggleAcc(this)"><span><i class="fas fa-video"></i> {{ "جلسات البث المباشر" if lang=="ar" else "Live Sessions" }} ({{ item.sessions|length }})</span> <i class="fas fa-chevron-down"></i></div>
+                        <div class="sub-acc-body">
+                            {% if item.sessions %}
+                                {% for sess in item.sessions %}
+                                <div class="archive-item">
+                                    <div><i class="fas fa-broadcast-tower" style="color:#2c3e50;"></i> <strong>{{ sess.title }}</strong></div>
+                                    <small style="color:#666;" dir="ltr">{{ sess.start_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                {% endfor %}
+                            {% else %}<p style="text-align:center; color:#999; padding:10px;">لا توجد جلسات</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 🌟 الطلاب المسجلون (يظهر للمدرس والمدير فقط) -->
+                    {% if current_user.is_teacher or current_user.is_admin %}
+                    <div class="sub-acc">
+                        <div class="sub-acc-header" onclick="toggleAcc(this)"><span><i class="fas fa-users"></i> {{ "الطلاب المسجلون" if lang=="ar" else "Students" }} ({{ item.students|length }})</span> <i class="fas fa-chevron-down"></i></div>
+                        <div class="sub-acc-body">
+                            {% if item.students %}
+                            <table class="student-table">
+                                <thead><tr><th>#</th><th>{{ "الطالب" if lang=="ar" else "Student" }}</th><th>{{ "المعدل" if lang=="ar" else "Avg" }}</th><th>{{ "الحالة" if lang=="ar" else "Status" }}</th></tr></thead>
+                                <tbody>
+                                    {% for s in item.students %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ s.user.full_name }}</td>
+                                        <td><strong>{{ s.avg }}%</strong></td>
+                                        <td><span style="color: {{ '#2ecc71' if s.status=='ناجح' else '#e74c3c' if s.status=='راسب' else '#999' }}">{{ s.status }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}<p style="text-align:center; color:#999; padding:10px;">لا يوجد طلاب</p>{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center; padding:50px; color:#999;"><i class="fas fa-folder-open" style="font-size:4em; margin-bottom:20px;"></i><h4>لا توجد بيانات مؤرشفة تطابق بحثك لهذه السنة</h4></div>
+        {% endif %}
+
+    {% else %}
+        <div style="text-align:center; padding:50px; color:#999;">
+            <i class="fas fa-archive" style="font-size:4em; margin-bottom:20px;"></i>
+            <h4>{{ "الرجاء اختيار السنة الدراسية لعرض الأرشيف" if lang=="ar" else "Please select a year to view the archive" }}</h4>
+        </div>
+    {% endif %}
+</section>
+
+<script>
+    // دالة جافاسكربت بسيطة لفتح وإغلاق القوائم المنسدلة
+    function toggleAcc(element) {
+        element.parentElement.classList.toggle('active');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ "أسئلة الاختبار" if lang=="ar" else "Test Questions" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><a href="{{ back_url }}">{{ "الاختبارات" if lang=="ar" else "Tests" }}</a><span>{{ test.name }}</span></div>
+        <div class="header-actions">
+            <a href="{{ url_for("add_test_question", id=test.id) }}" class="btn btn-primary btn-3d btn-sm"><i class="fas fa-plus"></i> {{ "إضافة سؤال" if lang=="ar" else "Add Question" }}</a>
+            <a href="{{ url_for("test_results", id=test.id) }}" class="btn btn-success btn-3d btn-sm"><i class="fas fa-chart-line"></i> {{ "النتائج" if lang=="ar" else "Results" }}</a>
+        </div>
+    </div>
+    <div class="form-card card-3d" style="margin-bottom:20px;">
+        <div class="form-card-header"><h3><i class="fas fa-brain"></i> {{ "إنشاء أسئلة بالذكاء الاصطناعي" if lang=="ar" else "AI Question Generator" }}</h3></div>
+        <form method="POST" action="{{ url_for("generate_ai_test_questions", test_id=test.id) }}" class="entity-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+                <div class="form-group"><label>{{ "الموضوع" if lang=="ar" else "Topic" }}</label><input type="text" name="topic" class="form-control input-3d" required></div>
+                <div class="form-group"><label>{{ "عدد الأسئلة" if lang=="ar" else "Count" }}</label><input type="number" name="num_questions" class="form-control input-3d" value="5" min="1" max="20"></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-3d"><i class="fas fa-magic"></i> {{ "توليد بالذكاء الاصطناعي" if lang=="ar" else "AI Generate" }}</button>
+        </form>
+    </div>
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>{{ "السؤال" if lang=="ar" else "Question" }}</th><th>{{ "النوع" if lang=="ar" else "Type" }}</th><th>{{ "العلامة" if lang=="ar" else "Mark" }}</th><th>{{ "AI" if lang=="ar" else "AI" }}</th><th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th></tr></thead>
+            <tbody>
+                {% for q in questions %}
+                <tr>
+                    <td>{{ loop.index }}</td><td>{{ q.question_text[:80] }}{% if q.question_text|length > 80 %}...{% endif %}</td>
+                    <td><span class="type-badge {{ q.question_type }}">{{ q.question_type }}</span></td>
+                    <td>{{ q.marks }}</td>
+                    <td>{% if q.ai_generated %}<i class="fas fa-robot text-primary"></i>{% else %}-{% endif %}</td>
+                    <td><button onclick="confirmDelete('{{ url_for("delete_test_question", test_id=test.id, q_id=q.id) }}')" class="btn btn-sm btn-danger btn-3d"><i class="fas fa-trash"></i></button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not questions %}<div class="empty-state"><i class="fas fa-question-circle"></i><p>{{ "لا توجد أسئلة" if lang=="ar" else "No questions" }}</p></div>{% endif %}
+    </div>
+    <div class="action-bar">
+        <a href="{{ back_url }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

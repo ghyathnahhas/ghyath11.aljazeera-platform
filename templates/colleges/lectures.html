@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ lecture.name }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb">
+            <a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a>
+            <a href="{{ url_for("course_detail", id=lecture.course_id) }}">{{ lecture.course.name }}</a>
+            <span>{{ lecture.name }}</span>
+        </div>
+    </div>
+    <div class="detail-card card-3d">
+        <div class="detail-header">
+            <div class="detail-icon"><i class="fas fa-chalkboard"></i></div>
+            <h1>{{ lecture.name if lang=="ar" else (lecture.name_en or lecture.name) }}</h1>
+            <p>{{ lecture.description or "" }}</p>
+        </div>
+        <div class="detail-body">
+
+            <!-- قسم مشغل الوسائط والدمج (الجديد) -->
+            {% set has_media = false %}
+            {% for f in lecture.files %}
+                {% if f.embed_url or (f.file_type == 'video' and f.file_path) or (f.file_type == 'audio' and f.file_path) %}
+                    {% set has_media = true %}
+                {% endif %}
+            {% endfor %}
+
+            {% if has_media %}
+            <h3 class="sub-title"><i class="fas fa-play-circle"></i> {{ "مشاهدة المحاضرة" if lang=="ar" else "Watch Lecture" }}</h3>
+            <div class="media-players-container" style="margin-bottom: 30px;">
+                {% for f in lecture.files %}
+                    <!-- دمج روابط يوتيوب وجوجل درايف -->
+                    {% if f.embed_url %}
+                    <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                        <iframe src="{{ f.embed_url }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+                    </div>
+                    <!-- مشغل الفيديو المرفوع مباشرة (mp4) -->
+                    {% elif f.file_type == 'video' and f.file_path %}
+                    <div style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; background: #000;">
+                        <video controls style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 10px;">
+                            <source src="{{ url_for('preview_lecture_file', id=f.id) }}" type="video/mp4">
+                            {{ "متصفحك لا يدعم تشغيل الفيديو" if lang=="ar" else "Your browser does not support video" }}
+                        </video>
+                    </div>
+                    <!-- مشغل الصوت المرفوع مباشرة (mp3) -->
+                    {% elif f.file_type == 'audio' and f.file_path %}
+                    <div style="margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <audio controls style="width: 100%;">
+                            <source src="{{ url_for('preview_lecture_file', id=f.id) }}" type="audio/mpeg">
+                            {{ "متصفحك لا يدعم تشغيل الصوت" if lang=="ar" else "Your browser does not support audio" }}
+                        </audio>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <h3 class="sub-title"><i class="fas fa-cloud-upload-alt"></i> {{ "ملفات المحاضرة" if lang=="ar" else "Lecture Files" }}</h3>
+            {% if lecture.files.count() > 0 %}
+            <div class="files-grid">
+                {% for f in lecture.files %}
+                <div class="file-card card-3d">
+                    <div class="file-icon {% if f.file_type == "link" %}link-type{% elif f.file_type == "video" %}video-type{% elif f.file_type == "audio" %}audio-type{% elif f.file_type == "pdf" %}pdf-type{% else %}ppt-type{% endif %}">
+                        {% if f.file_type == "link" %}<i class="fas fa-external-link-alt"></i>
+                        {% elif f.file_type == "video" %}<i class="fas fa-play-circle"></i>
+                        {% elif f.file_type == "audio" %}<i class="fas fa-headphones"></i>
+                        {% elif f.file_type == "pdf" %}<i class="fas fa-file-pdf"></i>
+                        {% else %}<i class="fas fa-file-powerpoint"></i>{% endif %}
+                    </div>
+                    <div class="file-info">
+                        <span class="file-type-label">{{ f.file_type }}</span>
+                        {% if f.file_size %}<span class="file-size">{{ "%.1f"|format(f.file_size/1024/1024) }} MB</span>{% endif %}
+                    </div>
+                    <div class="file-actions">
+                        {% if f.file_type == "link" %}
+                            <!-- فتح الروابط الخارجية في تبويب جديد -->
+                            <a href="{{ f.external_link }}" class="btn btn-sm btn-info btn-3d" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+                        {% else %}
+                            <!-- زر المعاينة للملفات المرفوعة -->
+                            <a href="{{ url_for("preview_lecture_file", id=f.id) }}" class="btn btn-sm btn-info btn-3d" target="_blank"><i class="fas fa-eye"></i></a>
+                            <!-- زر التحميل للملفات المرفوعة فقط (غير الروابط) -->
+                            <a href="{{ url_for("download_lecture_file", id=f.id) }}" class="btn btn-sm btn-success btn-3d"><i class="fas fa-download"></i></a>
+                        {% endif %}
+
+                        {% if current_user.is_authenticated and current_user.can_manage %}
+                        <button onclick="confirmDelete('{{ url_for("delete_lecture_file", id=f.id) }}')" class="btn btn-sm btn-danger btn-3d"><i class="fas fa-trash"></i></button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state"><i class="fas fa-folder-open"></i><p>{{ "لا توجد ملفات" if lang=="ar" else "No files" }}</p></div>
+            {% endif %}
+
+            {% if current_user.is_authenticated and current_user.can_manage %}
+            <div style="margin-top:20px;">
+                <a href="{{ url_for("upload_lecture", id=lecture.id) }}" class="btn btn-primary btn-3d"><i class="fas fa-cloud-upload-alt"></i> {{ "رفع محاضرة" if lang=="ar" else "Upload Lecture" }}</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="action-bar">
+        {% if current_user.is_authenticated and current_user.can_manage %}
+        <a href="{{ url_for("edit_lecture", id=lecture.id) }}" class="btn btn-warning btn-3d"><i class="fas fa-edit"></i> {{ "التعديل" if lang=="ar" else "Edit" }}</a>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <button onclick="confirmDelete('{{ url_for("delete_lecture", id=lecture.id) }}')" class="btn btn-danger btn-3d"><i class="fas fa-trash"></i> {{ "الحذف" if lang=="ar" else "Delete" }}</button>
+        {% endif %}
+        <a href="{{ url_for("course_detail", id=lecture.course_id) }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

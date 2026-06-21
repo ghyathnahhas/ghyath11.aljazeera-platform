@@ -1,0 +1,11 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "كل التنبيهات" if lang=="ar" else "All Alerts" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar"><div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "كل التنبيهات" if lang=="ar" else "All Alerts" }}</span></div></div>
+    <div class="data-table-wrapper card-3d"><table class="data-table"><thead><tr><th>#</th><th>{{ "المرسل" if lang=="ar" else "From" }}</th><th>{{ "المستقبل" if lang=="ar" else "To" }}</th><th>{{ "المقرر" if lang=="ar" else "Course" }}</th><th>{{ "النوع" if lang=="ar" else "Type" }}</th><th>{{ "الأولوية" if lang=="ar" else "Priority" }}</th><th>{{ "الموعد" if lang=="ar" else "Deadline" }}</th><th>{{ "التاريخ" if lang=="ar" else "Date" }}</th></tr></thead>
+    <tbody>{% for a in announcements %}<tr><td>{{ loop.index }}</td><td>{{ a.sender.full_name if a.sender else "-" }}</td><td>{{ a.receiver.full_name if a.receiver else "-" }}</td><td>{{ a.course.name if a.course else "-" }}</td><td><span class="type-badge {{ a.msg_type }}">{{ a.msg_type }}</span></td><td><span class="priority-badge {{ a.priority }}">{{ a.priority }}</span></td><td>{{ a.deadline.strftime("%Y-%m-%d %H:%M") if a.deadline else "-" }}</td><td>{{ a.created_at.strftime("%Y-%m-%d %H:%M") }}</td></tr>{% endfor %}</tbody></table>
+    {% if not announcements %}<div class="empty-state"><i class="fas fa-bell"></i><p>{{ "لا توجد تنبيهات" if lang=="ar" else "No alerts" }}</p></div>{% endif %}</div>
+    <div class="action-bar"><a href="{{ url_for("admin_dashboard") }}" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</a><a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "الرئيسية" if lang=="ar" else "Home" }}</a></div>
+</section>
+{% endblock %}

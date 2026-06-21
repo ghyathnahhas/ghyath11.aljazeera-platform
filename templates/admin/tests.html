@@ -1,0 +1,34 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ "إدارة الاختبارات" if lang=="ar" else "Test Management" }}{% endblock %}
+{% block content %}
+<section class="page-section">
+    <div class="page-header-bar">
+        <div class="breadcrumb"><a href="{{ url_for("index") }}"><i class="fas fa-home"></i></a><span>{{ "إدارة الاختبارات" if lang=="ar" else "Tests" }}</span></div>
+        <a href="{{ url_for("admin_add_test") }}" class="btn btn-primary btn-3d btn-sm"><i class="fas fa-plus"></i> {{ "إضافة اختبار" if lang=="ar" else "Add Test" }}</a>
+    </div>
+    <div class="data-table-wrapper card-3d">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>{{ "الاسم" if lang=="ar" else "Name" }}</th><th>{{ "المقرر" if lang=="ar" else "Course" }}</th><th>{{ "النوع" if lang=="ar" else "Type" }}</th><th>{{ "العلامة" if lang=="ar" else "Mark" }}</th><th>{{ "المدة" if lang=="ar" else "Duration" }}</th><th>{{ "إجراءات" if lang=="ar" else "Actions" }}</th></tr></thead>
+            <tbody>
+                {% for t in tests %}
+                <tr>
+                    <td>{{ loop.index }}</td><td>{{ t.name }}</td><td>{{ t.course.name if t.course else "-" }}</td>
+                    <td><span class="type-badge {{ t.test_type }}">{{ t.test_type }}</span></td>
+                    <td>{{ t.total_mark }}</td><td>{{ t.duration_minutes }} {{ "دقيقة" if lang=="ar" else "min" }}</td>
+                    <td>
+                        <a href="{{ url_for("test_questions", id=t.id) }}" class="btn btn-sm btn-info btn-3d"><i class="fas fa-list"></i></a>
+                        <a href="{{ url_for("test_results", id=t.id) }}" class="btn btn-sm btn-success btn-3d"><i class="fas fa-chart-line"></i></a>
+                        <a href="{{ url_for("admin_edit_test", id=t.id) }}" class="btn btn-sm btn-warning btn-3d"><i class="fas fa-edit"></i></a>
+                        <button onclick="confirmDelete('{{ url_for("admin_delete_test", id=t.id) }}')" class="btn btn-sm btn-danger btn-3d"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="action-bar">
+        <button onclick="window.history.back()" class="btn btn-secondary btn-3d"><i class="fas fa-arrow-right"></i> {{ "العودة" if lang=="ar" else "Back" }}</button>
+        <a href="{{ url_for("index") }}" class="btn btn-info btn-3d"><i class="fas fa-home"></i> {{ "العودة إلى الرئيسية" if lang=="ar" else "Home" }}</a>
+    </div>
+</section>
+{% endblock %}

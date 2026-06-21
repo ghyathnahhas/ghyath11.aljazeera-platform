@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ "تسجيل الدخول" if lang == "ar" else "Login" }}{% endblock %}
+{% block content %}
+<section class="login-section">
+    <div class="login-bg-shapes">
+        <div class="lshape lshape-1"></div>
+        <div class="lshape lshape-2"></div>
+        <div class="lshape lshape-3"></div>
+    </div>
+    <div class="login-container">
+        <div class="login-card card-3d">
+            <div class="login-header">
+                <div class="login-icon"><i class="fas fa-user-lock"></i></div>
+                <h2>{{ "تسجيل الدخول" if lang == "ar" else "Login" }}</h2>
+                <p>{{ "مرحبا بكم في منصة جامعة الجزيرة الخاصة" if lang == "ar" else "Welcome to Al-Jazira Private University Platform" }}</p>
+            </div>
+            <form method="POST" action="{{ url_for("login") }}" id="loginForm" class="login-form">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label><i class="fas fa-user-tag"></i> {{ "نوع المستخدم" if lang == "ar" else "User Type" }}</label>
+                    <select name="user_type_hint" id="userTypeHint" class="form-control input-3d">
+                        <option value="student">{{ "طالب" if lang == "ar" else "Student" }}</option>
+                        <option value="teacher">{{ "مدرس" if lang == "ar" else "Teacher" }}</option>
+                        <option value="guest">{{ "ضيف زائر" if lang == "ar" else "Guest" }}</option>
+                        <option value="admin">{{ "مدير المنصة" if lang == "ar" else "Platform Admin" }}</option>
+                    </select>
+                </div>
+                <div class="form-group" id="usernameGroup">
+                    <label for="username"><i class="fas fa-user"></i> {{ "اسم المستخدم" if lang == "ar" else "Username" }}</label>
+                    <input type="text" name="username" id="username" class="form-control input-3d" placeholder="{{ "أدخل اسم المستخدم" if lang == "ar" else "Enter username" }}">
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label for="password"><i class="fas fa-lock"></i> {{ "كلمة المرور" if lang == "ar" else "Password" }}</label>
+                    <div class="password-field">
+                        <input type="password" name="password" id="password" class="form-control input-3d" placeholder="{{ "أدخل كلمة المرور" if lang == "ar" else "Enter password" }}">
+                        <button type="button" class="toggle-password" onclick="togglePassword()"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                
+                <!-- زر الدخول العادي يظهر للطلاب والمدرسين والمديرين -->
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-3d btn-block btn-login">
+                    <i class="fas fa-sign-in-alt"></i> {{ "تسجيل الدخول" if lang == "ar" else "Login" }}
+                </button>
+
+                <!-- زر الدخول كضيف يظهر فقط عند اختيار ضيف زائر (إبداع فني تقني) -->
+                <a href="{{ url_for('guest_login') }}" id="guestBtn" class="btn btn-outline btn-3d btn-block btn-login" style="display:none; margin-top:10px; text-decoration:none;">
+                    <i class="fas fa-walking"></i> {{ "دخول كضيف زائر" if lang == "ar" else "Enter as Guest" }}
+                </a>
+                
+                <div id="guestNote" style="display:none; margin-top:15px; text-align:center; font-size:0.9em; color:#6c757d;">
+                    <i class="fas fa-info-circle"></i> {{ "يمكنك التجول في المنصة بحرية، لكن لن تتمكن من معاينة المحاضرات أو الدخول للغرف الافتراضية" if lang == "ar" else "You can browse freely, but lectures and virtual classes are restricted." }}
+                </div>
+            </form>
+            <div class="login-footer">
+                <a href="{{ url_for("index") }}" class="back-link"><i class="fas fa-arrow-right"></i> {{ "العودة للرئيسية" if lang == "ar" else "Back to Home" }}</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function togglePassword(){
+    var p=document.getElementById("password");
+    var icon=document.querySelector(".toggle-password i");
+    if(p.type==="password"){p.type="text";icon.className="fas fa-eye-slash";}
+    else{p.type="password";icon.className="fas fa-eye";}
+}
+
+// إبداع فني: التحكم الديناميكي بحقول الدخول عند اختيار الضيف
+document.getElementById('userTypeHint').addEventListener('change', function() {
+    const isGuest = this.value === 'guest';
+    document.getElementById('usernameGroup').style.display = isGuest ? 'none' : 'block';
+    document.getElementById('passwordGroup').style.display = isGuest ? 'none' : 'block';
+    document.getElementById('loginBtn').style.display = isGuest ? 'none' : 'block';
+    document.getElementById('guestBtn').style.display = isGuest ? 'block' : 'none';
+    document.getElementById('guestNote').style.display = isGuest ? 'block' : 'none';
+    
+    // إزالة خاصية التحقق الإجباري إذا كان ضيفاً
+    document.getElementById('username').required = !isGuest;
+    document.getElementById('password').required = !isGuest;
+});
+</script>
+{% endblock %}

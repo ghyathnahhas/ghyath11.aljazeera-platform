@@ -1,0 +1,559 @@
+{% extends "base.html" %}
+{% block title %}{{ "الاستوديو الافتراضي" if lang=="ar" else "Virtual Studio" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --vc-primary: #0d47a1;
+        --vc-primary-light: #1565c0;
+        --vc-primary-dark: #1a237e;
+        --vc-live: #d32f2f;
+        --vc-success: #2ecc71;
+        --vc-warning: #f39c12;
+        --vc-bg: #f0f2f5;
+        --vc-card: rgba(255,255,255,0.95);
+        --vc-border: #e0e0e0;
+        --vc-radius: 12px;
+        --vc-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    .vc-root { display:flex; flex-direction:column; height:100vh; height:100dvh; background:var(--vc-bg); overflow:hidden; position:relative; }
+
+    .session-schedule-bar { display:none; align-items:center; justify-content:space-between; position:relative; overflow:hidden; flex-shrink:0; z-index:18; box-shadow:0 4px 20px rgba(0,0,0,0.15); transition:all 0.6s cubic-bezier(0.4,0,0.2,1); }
+    .session-schedule-bar.visible { display:flex; }
+    .session-schedule-bar.upcoming { background:linear-gradient(135deg,#0d47a1,#1565c0,#1976d2); color:white; }
+    .session-schedule-bar.live { background:linear-gradient(135deg,#b71c1c,#c62828,#d32f2f); color:white; }
+    .session-schedule-bar::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent); animation:sessionShimmer 4s ease-in-out infinite; }
+    @keyframes sessionShimmer { 0%{left:-100%} 100%{left:100%} }
+    .session-bar-accent { width:5px; align-self:stretch; flex-shrink:0; background:rgba(255,255,255,0.3); }
+    .session-schedule-bar.live .session-bar-accent { background:#ff5252; animation:accentPulse 1s ease-in-out infinite; }
+    @keyframes accentPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .session-bar-content { flex:1; padding:10px 20px; display:flex; align-items:center; justify-content:space-between; gap:15px; position:relative; z-index:1; flex-wrap:wrap; }
+    .session-bar-info { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .session-status-badge { padding:4px 14px; border-radius:20px; font-size:0.72em; font-weight:800; letter-spacing:0.5px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+    .session-status-badge.upcoming-badge { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); }
+    .session-status-badge.live-badge { background:#ff5252; border:1px solid #ff8a80; animation:liveBadgePulse 1.5s ease-in-out infinite; }
+    @keyframes liveBadgePulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,0.7)} 50%{box-shadow:0 0 0 8px rgba(255,82,82,0)} }
+    .session-title-text { font-weight:700; font-size:0.95em; white-space:nowrap; max-width:300px; overflow:hidden; text-overflow:ellipsis; }
+    .session-meta { display:flex; align-items:center; gap:15px; font-size:0.82em; opacity:0.9; flex-wrap:wrap; }
+    .session-meta-item { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+    .session-meta-item i { font-size:0.9em; opacity:0.8; }
+    .session-bar-timer { font-size:1.3em; font-weight:800; font-variant-numeric:tabular-nums; background:rgba(255,255,255,0.15); padding:6px 18px; border-radius:10px; backdrop-filter:blur(5px); white-space:nowrap; border:1px solid rgba(255,255,255,0.1); letter-spacing:1px; display:flex; align-items:center; gap:8px; }
+    .session-bar-timer .timer-label { font-size:0.55em; opacity:0.8; font-weight:600; }
+    .session-schedule-bar.live .session-bar-timer { background:rgba(255,0,0,0.3); border-color:rgba(255,255,255,0.2); }
+    .session-bar-close { background:rgba(255,255,255,0.15); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.8em; transition:0.2s; flex-shrink:0; }
+    .session-bar-close:hover { background:rgba(255,255,255,0.3); }
+    .session-schedule-bar.almost-live { animation:almostLivePulse 1s ease-in-out infinite; }
+    @keyframes almostLivePulse { 0%,100%{box-shadow:0 4px 20px rgba(0,0,0,0.15)} 50%{box-shadow:0 4px 30px rgba(255,152,0,0.5)} }
+
+    .vc-header { background:linear-gradient(135deg,var(--vc-primary-dark),var(--vc-primary)); color:white; padding:8px 15px; display:flex; justify-content:space-between; align-items:center; z-index:20; flex-shrink:0; box-shadow:0 2px 10px rgba(0,0,0,0.2); }
+    .vc-header-title { display:flex; align-items:center; gap:10px; }
+    .vc-header-title h5 { margin:0; font-size:0.95em; }
+    .sync-indicator { width:8px; height:8px; border-radius:50%; background:var(--vc-success); display:inline-block; animation:syncPulse 2s infinite; }
+    @keyframes syncPulse { 0%{box-shadow:0 0 0 0 rgba(46,204,113,0.7)} 70%{box-shadow:0 0 0 10px rgba(46,204,113,0)} 100%{box-shadow:0 0 0 0 rgba(46,204,113,0)} }
+    .sync-status-text { font-size:0.7em; opacity:0.8; }
+    .vc-header-actions { display:flex; gap:6px; align-items:center; }
+
+    .vc-body { display:flex; flex:1; overflow:hidden; position:relative; min-height:0; }
+    @media (min-width:769px) {
+        .vc-body { flex-direction:row; }
+        .vc-main { flex:1; display:flex; flex-direction:column; padding:10px; overflow:hidden; min-height:0; }
+        .vc-sidebar { width:370px; background:var(--vc-card); border-left:1px solid var(--vc-border); display:flex; flex-direction:column; box-shadow:-5px 0 20px rgba(0,0,0,0.05); backdrop-filter:blur(10px); transition:all 0.3s ease; }
+        .vc-sidebar.collapsed { width:0; overflow:hidden; border:none; }
+        .mobile-bottom-nav,.mobile-fullscreen-section { display:none !important; }
+        #videoSection { height:100%; width:100%; border-radius:var(--vc-radius); overflow:hidden; border:3px solid var(--vc-live); display:none; background:#000; position:relative; }
+        .board-container { flex:1; min-height:0; }
+    }
+    @media (max-width:768px) {
+        .vc-root { height:100vh; height:100dvh; }
+        .vc-body { flex-direction:column; }
+        .vc-main { flex:1; padding:5px; overflow:hidden; position:relative; background:#e0e0e0; min-height:0; }
+        #videoSection { height:100%; width:100%; border-radius:8px; overflow:hidden; display:none; background:#000; border:2px solid var(--vc-live); position:relative; }
+        .vc-sidebar { display:none !important; }
+        .mobile-bottom-nav { display:flex; background:white; border-top:1px solid #ddd; flex-shrink:0; z-index:25; box-shadow:0 -2px 10px rgba(0,0,0,0.1); }
+        .mob-nav-btn { flex:1; padding:8px 0; text-align:center; color:#666; font-size:0.65em; font-weight:bold; cursor:pointer; transition:0.2s; border:none; background:none; }
+        .mob-nav-btn i { display:block; font-size:1.5em; margin-bottom:1px; }
+        .mob-nav-btn.active { color:var(--vc-primary); }
+        .mobile-fullscreen-section { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:white; z-index:30; flex-direction:column; padding:15px; animation:slideUpMobile 0.3s ease-out; }
+        @keyframes slideUpMobile { from{transform:translateY(20%);opacity:0} to{transform:translateY(0);opacity:1} }
+        .session-bar-content { padding:8px 12px; gap:8px; }
+        .session-title-text { max-width:160px; font-size:0.85em; }
+        .session-meta { gap:8px; font-size:0.75em; }
+        .session-bar-timer { font-size:1em; padding:4px 12px; }
+    }
+
+    .board-container { background:white; border-radius:var(--vc-radius); overflow:hidden; position:relative; box-shadow:var(--vc-shadow); display:flex; flex-direction:column; }
+    .board-toolbar { background:#fafafa; padding:6px 8px; border-bottom:1px solid #eee; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+    .board-toolbar-label { font-weight:800; color:var(--vc-primary-dark); font-size:0.8em; margin-left:5px; margin-right:5px; display:flex; align-items:center; gap:5px; }
+    .board-sync-dot { width:6px; height:6px; border-radius:50%; background:var(--vc-success); animation:syncPulse 2s infinite; }
+    .board-canvas-wrapper { flex:1; position:relative; background:white; touch-action:none; min-height:0; transition:background 0.3s; }
+    .board-canvas-wrapper.has-file { background:transparent; }
+    #whiteboard { z-index:3 !important; }
+    #pdfFrame { z-index:2 !important; }
+
+    .vc-tabs { display:flex; background:#f8f9fa; border-bottom:2px solid #e9ecef; padding:0; flex-shrink:0; }
+    .vc-tab-btn { flex:1; padding:10px 6px; text-align:center; cursor:pointer; font-weight:700; color:#666; transition:all 0.2s; border:none; border-bottom:3px solid transparent; background:none; font-size:0.78em; }
+    .vc-tab-btn.active { color:var(--vc-primary); border-bottom-color:var(--vc-primary); background:white; }
+    .vc-tab-btn:hover { color:var(--vc-primary); }
+    .vc-tab-content { display:none; flex-direction:column; flex:1; overflow-y:auto; padding:12px; animation:fadeIn 0.3s; min-height:0; }
+    .vc-tab-content.active { display:flex; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    .chat-area { flex:1; overflow-y:auto; background:#e8eaf6; border-radius:var(--vc-radius); padding:10px; display:flex; flex-direction:column; gap:5px; }
+    .chat-bubble { padding:8px 14px; border-radius:16px; margin-bottom:4px; max-width:85%; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.88em; line-height:1.5; }
+    .chat-teacher { background:#e3f2fd; align-self:flex-start; border-bottom-right-radius:3px; }
+    .chat-me { background:#e8f5e9; align-self:flex-end; border-bottom-left-radius:3px; }
+    .chat-other { background:#f1f1f1; align-self:flex-start; border-bottom-right-radius:3px; }
+    .chat-bubble strong { font-size:0.78em; color:var(--vc-primary); }
+    .chat-bubble p { margin:2px 0 0 0; color:#333; }
+    .chat-form { display:flex; gap:8px; margin-top:8px; }
+    .chat-form input { border-radius:22px; font-size:0.88em; border:2px solid #e0e0e0; padding:6px 14px; transition:0.2s; }
+    .chat-form input:focus { border-color:var(--vc-primary); outline:none; }
+    .chat-send-btn { border-radius:50%; width:38px; height:38px; border:none; background:var(--vc-primary); color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:0.2s; flex-shrink:0; }
+    .chat-send-btn:hover { background:var(--vc-primary-dark); transform:scale(1.05); }
+
+    .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+    .schedule-modal-box { background:white; border-radius:20px; width:92%; max-width:460px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.3); animation:modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes modalPop { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+    .schedule-modal-header { background:linear-gradient(135deg,var(--vc-primary-dark),var(--vc-primary)); color:white; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; }
+    .schedule-modal-header h4 { margin:0; font-size:1.05em; }
+    .schedule-modal-close { background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.2em; transition:0.2s; }
+    .schedule-modal-close:hover { background:rgba(255,255,255,0.3); }
+    .schedule-modal-body { padding:20px; }
+    .schedule-field { margin-bottom:16px; }
+    .schedule-field label { display:block; font-weight:700; color:var(--vc-primary-dark); margin-bottom:6px; font-size:0.88em; }
+    .schedule-field label i { margin-left:5px; }
+    .schedule-field input { width:100%; padding:10px 14px; border:2px solid #e0e0e0; border-radius:10px; font-size:0.9em; transition:0.2s; font-family:'Cairo',sans-serif; }
+    .schedule-field input:focus { border-color:var(--vc-primary); outline:none; box-shadow:0 0 0 3px rgba(13,71,161,0.1); }
+    .schedule-submit-btn { width:100%; padding:12px; border:none; border-radius:12px; background:linear-gradient(135deg,var(--vc-primary),var(--vc-primary-light)); color:white; font-weight:800; font-size:1em; cursor:pointer; transition:0.3s; font-family:'Cairo',sans-serif; }
+    .schedule-submit-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(13,71,161,0.3); }
+    .help-modal-box { background:white; border-radius:15px; width:90%; max-width:400px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 15px 40px rgba(0,0,0,0.3); overflow:hidden; }
+    .help-modal-header { background:var(--vc-primary-dark); color:white; padding:12px 15px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+    .help-modal-body { padding:15px; overflow-y:auto; flex:1; }
+    .help-mini-step { background:#f8f9fa; border-right:3px solid var(--vc-primary); padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.85em; line-height:1.6; }
+    .help-mini-step.mobile-step { border-right-color:var(--vc-success); }
+    .video-fullscreen-btn { position:absolute; top:15px; left:15px; z-index:100; background:rgba(0,0,0,0.6); color:white; border:2px solid rgba(255,255,255,0.3); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9em; display:none; transition:background 0.2s; }
+    .video-fullscreen-btn:hover { background:rgba(231,76,60,0.9); }
+    .archive-item { background:white; border:1px solid #e0e0e0; border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; transition:0.2s; }
+    .archive-item:hover { box-shadow:0 3px 10px rgba(0,0,0,0.08); }
+    .archive-item-title { color:var(--vc-primary-dark); font-weight:700; font-size:0.88em; }
+    .archive-item-time { color:#666; font-size:0.78em; }
+    .session-status-tag { padding:3px 10px; border-radius:15px; font-size:0.7em; font-weight:700; white-space:nowrap; }
+    .tag-live { background:var(--vc-live); color:white; }
+    .tag-finished { background:#6c757d; color:white; }
+    .tag-upcoming { background:#17a2b8; color:white; }
+    .mfs-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:2px solid #eee; padding-bottom:10px; }
+    .mfs-close { background:#eee; border:none; border-radius:50%; width:30px; height:30px; font-size:1.2em; cursor:pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vc-root" id="vcRoot">
+    <div class="vc-header">
+        <div class="vc-header-title">
+            <span class="sync-indicator" id="syncDot"></span>
+            <h5><i class="fas fa-chalkboard-teacher"></i> {{ course.name }}</h5>
+            <span class="sync-status-text" id="syncText">{{ "متصل" if lang=="ar" else "Connected" }}</span>
+        </div>
+        <div class="vc-header-actions">
+            <button onclick="document.getElementById('helpModal').style.display='flex'" class="btn btn-info btn-sm"><i class="fas fa-question-circle"></i></button>
+            <button onclick="toggleVideo()" id="btnVideo" class="btn btn-danger btn-sm"><i class="fas fa-video"></i> {{ "بث" if lang=="ar" else "Live" }}</button>
+            <button onclick="toggleSidebar()" class="btn btn-light btn-sm d-none d-md-inline-block"><i class="fas fa-comments"></i></button>
+            {% if current_user.is_teacher or current_user.is_admin %}
+            <button onclick="openScheduleModal()" class="btn btn-warning btn-sm"><i class="fas fa-calendar-plus"></i></button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="session-schedule-bar" id="sessionBar">
+        <div class="session-bar-accent"></div>
+        <div class="session-bar-content">
+            <div class="session-bar-info">
+                <span class="session-status-badge" id="sessionBadge"><i class="fas fa-clock"></i> <span id="sessionBadgeText">{{ "قادمة" if lang=="ar" else "Upcoming" }}</span></span>
+                <span class="session-title-text" id="sessionTitle"></span>
+            </div>
+            <div class="session-meta">
+                <span class="session-meta-item" id="sessionDate"><i class="fas fa-calendar-day"></i> <span></span></span>
+                <span class="session-meta-item" id="sessionTimeRange"><i class="fas fa-clock"></i> <span></span></span>
+            </div>
+            <div class="session-bar-timer" id="sessionTimer"><span class="timer-label" id="timerLabel"></span><span id="timerValue">--:--:--</span></div>
+        </div>
+        <button class="session-bar-close" onclick="dismissSessionBar()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="vc-body">
+        <div class="vc-main">
+            <div id="videoSection">
+                <div id="jitsi-container" style="width:100%;height:100%;"></div>
+                <button class="video-fullscreen-btn" id="videoFullscreenBtn" onclick="toggleVideoFullscreen()"><i class="fas fa-expand"></i> {{ "ملء الشاشة" if lang=="ar" else "Fullscreen" }}</button>
+            </div>
+            <div class="board-container" id="boardContainer">
+                <div class="board-toolbar">
+                    <span class="board-toolbar-label"><i class="fas fa-chalkboard"></i> {{ "السبورة" if lang=="ar" else "Board" }} <span class="board-sync-dot" id="boardSyncDot"></span></span>
+                    {% if current_user.is_teacher or current_user.is_admin %}
+                    <button onclick="setTool('pen',2)" class="btn btn-sm btn-dark"><i class="fas fa-pen"></i></button>
+                    <button onclick="setTool('pen',6)" class="btn btn-sm btn-dark"><i class="fas fa-marker"></i></button>
+                    <button onclick="setTool('eraser')" class="btn btn-sm btn-secondary"><i class="fas fa-eraser"></i></button>
+                    <button onclick="setTool('text')" class="btn btn-sm btn-dark"><i class="fas fa-font"></i></button>
+                    <input type="text" id="textToolInput" placeholder="{{ 'نص' if lang=='ar' else 'Text' }}" style="display:none;width:80px;padding:2px;font-size:12px;border-radius:6px;border:1px solid #ccc;">
+                    <input type="color" id="colorPicker" value="#000000" style="width:22px;height:22px;border:none;cursor:pointer;border-radius:50%;">
+                    <button onclick="setTool('circle')" class="btn btn-sm btn-primary"><i class="far fa-circle"></i></button>
+                    <button onclick="setTool('rect')" class="btn btn-sm btn-primary"><i class="fas fa-vector-square"></i></button>
+                    <input type="file" id="boardFileInput" accept="image/*,.pdf" style="display:none;" onchange="handleBoardUpload(event)">
+                    <button onclick="document.getElementById('boardFileInput').click()" class="btn btn-sm btn-info"><i class="fas fa-file-upload"></i></button>
+                    <button id="annotateModeBtn" onclick="setAnnotateMode()" class="btn btn-sm btn-success" style="display:none;font-weight:800;border:2px solid #1b5e20;"><i class="fas fa-pencil-alt"></i> {{ "شرح" if lang=="ar" else "Draw" }}</button>
+                    <button id="readModeBtn" onclick="toggleReadMode()" class="btn btn-sm btn-outline-warning" style="display:none;font-weight:800;"><i class="fas fa-hand-paper"></i> {{ "تصفح" if lang=="ar" else "Scroll" }}</button>
+                    <button id="clearBtn" onclick="clearCanvasAndDb()" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                    {% endif %}
+                    <button onclick="saveCanvas()" class="btn btn-sm btn-success" style="margin-left:auto;"><i class="fas fa-download"></i></button>
+                </div>
+                <div class="board-canvas-wrapper" id="whiteboard-wrapper">
+                    <canvas id="whiteboard" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;"></canvas>
+                    <iframe id="pdfFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;border:none;background:white;"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="vc-sidebar" id="vcSidebar">
+            <div class="vc-tabs">
+                <button class="vc-tab-btn active" onclick="switchTab('chat',this)"><i class="fas fa-comments"></i> {{ "دردشة" if lang=="ar" else "Chat" }}</button>
+                <button class="vc-tab-btn" onclick="switchTab('users',this)"><i class="fas fa-users"></i> {{ "حاضرون" if lang=="ar" else "Users" }}</button>
+                <button class="vc-tab-btn" onclick="switchTab('forum',this)"><i class="fas fa-bullhorn"></i> {{ "منتدى" if lang=="ar" else "Forum" }}</button>
+                <button class="vc-tab-btn" onclick="switchTab('archive',this)"><i class="fas fa-history"></i> {{ "أرشيف" if lang=="ar" else "Archive" }}</button>
+            </div>
+            <div id="chatSection" class="vc-tab-content active" style="padding:10px;">
+                <div id="chatMessages" class="chat-area">{% for msg in chat_messages %}<div class="chat-bubble {{ 'chat-me' if msg.user_id==current_user.id else 'chat-teacher' if msg.user_id==course.teacher_id else 'chat-other' }}"><strong>{{ chat_users[msg.user_id].full_name if msg.user_id in chat_users else 'مستخدم' }}</strong><p>{{ msg.message }}</p></div>{% endfor %}</div>
+                <form action="{{ url_for('send_chat',course_id=course.id) }}" method="POST" class="chat-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="text" name="message" class="form-control" required placeholder="{{ 'اكتب رسالة...' if lang=='ar' else 'Type...' }}"><button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button></form>
+            </div>
+            <div id="usersSection" class="vc-tab-content">
+                <ul style="list-style:none;padding:0;margin:0;">
+                    <li style="padding:12px;border-bottom:1px solid #eee;font-weight:bold;color:var(--vc-primary);"><i class="fas fa-user-tie"></i> {{ teacher.full_name if teacher else 'المدرس' }} <span style="float:right;"><i class="fas fa-crown" style="color:#f39c12;"></i></span></li>
+                    {% for student in enrolled_students %}<li style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;"><span><i class="fas fa-user-graduate" style="color:#666;"></i> {{ student.full_name }}</span><span id="focus-{{ student.id }}" style="width:10px;height:10px;border-radius:50%;background:var(--vc-success);transition:0.3s;"></span></li>{% endfor %}
+                </ul>
+            </div>
+            <div id="forumSection" class="vc-tab-content">
+                <form action="{{ url_for('add_forum_post',course_id=course.id) }}" method="POST" style="margin-bottom:15px;background:#f8f9fa;padding:15px;border-radius:12px;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="text" name="title" class="form-control mb-2" placeholder="{{ 'عنوان' if lang=='ar' else 'Title' }}" required><textarea name="content" class="form-control mb-2" rows="2" placeholder="{{ 'المحتوى' if lang=='ar' else 'Content' }}" required></textarea><button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-plus"></i> {{ "نشر" if lang=="ar" else "Post" }}</button></form>
+                {% for post in posts %}<div style="background:white;border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:10px;"><strong style="color:var(--vc-primary);">{{ post.title }}</strong><p style="margin:5px 0 0 0;font-size:0.85em;color:#555;">{{ post.content[:80] }}...</p></div>{% endfor %}
+            </div>
+            <div id="archiveSection" class="vc-tab-content" style="padding:0;">
+                <div style="padding:12px;flex:1;overflow-y:auto;">
+                    {% if sessions|length > 0 %}<ul style="list-style:none;padding:0;margin:0;">{% for s in sessions %}<li class="archive-item"><div><span class="archive-item-title">{{ s.title }}</span><br><span class="archive-item-time" dir="ltr">{{ s.start_time.strftime('%Y-%m-%d %H:%M') }} - {{ s.end_time.strftime('%H:%M') }}</span></div>{% if s.status=='live' %}<span class="session-status-tag tag-live">مباشر</span>{% elif s.status=='finished' %}<span class="session-status-tag tag-finished">انتهت</span>{% else %}<span class="session-status-tag tag-upcoming">قادمة</span>{% endif %}</li>{% endfor %}</ul>{% else %}<div style="text-align:center;color:#999;padding:30px 0;"><i class="fas fa-calendar-times" style="font-size:2.5em;"></i><p>{{ "لا توجد جلسات" if lang=="ar" else "No sessions" }}</p></div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-bottom-nav">
+        <button class="mob-nav-btn active" onclick="showMobileView('board',this)"><i class="fas fa-chalkboard"></i>{{ "سبورة" if lang=="ar" else "Board" }}</button>
+        <button class="mob-nav-btn" onclick="showMobileView('mChat',this)"><i class="fas fa-comments"></i>{{ "دردشة" if lang=="ar" else "Chat" }}</button>
+        <button class="mob-nav-btn" onclick="showMobileView('mUsers',this)"><i class="fas fa-users"></i>{{ "حاضرون" if lang=="ar" else "Users" }}</button>
+        <button class="mob-nav-btn" onclick="showMobileView('mForum',this)"><i class="fas fa-bullhorn"></i>{{ "منتدى" if lang=="ar" else "Forum" }}</button>
+        <button class="mob-nav-btn" onclick="showMobileView('mArchive',this)"><i class="fas fa-history"></i>{{ "أرشيف" if lang=="ar" else "Archive" }}</button>
+    </div>
+
+    <div id="mChatView" class="mobile-fullscreen-section"><div class="mfs-header"><h5>{{ "الدردشة" if lang=="ar" else "Chat" }}</h5><button class="mfs-close" onclick="closeMobileView()">&times;</button></div><div id="mChatMessages" class="chat-area">{% for msg in chat_messages %}<div class="chat-bubble {{ 'chat-me' if msg.user_id==current_user.id else 'chat-teacher' if msg.user_id==course.teacher_id else 'chat-other' }}"><strong>{{ chat_users[msg.user_id].full_name if msg.user_id in chat_users else '' }}</strong><p>{{ msg.message }}</p></div>{% endfor %}</div><form action="{{ url_for('send_chat',course_id=course.id) }}" method="POST" class="chat-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="text" name="message" class="form-control" required placeholder="{{ 'اكتب رسالة...' if lang=='ar' else 'Type...' }}"><button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button></form></div>
+    <div id="mUsersView" class="mobile-fullscreen-section"><div class="mfs-header"><h5>{{ "الحاضرون" if lang=="ar" else "Attendees" }}</h5><button class="mfs-close" onclick="closeMobileView()">&times;</button></div><ul style="list-style:none;padding:0;"><li style="padding:12px;border-bottom:1px solid #eee;"><b>{{ teacher.full_name if teacher else 'المدرس' }} 👨‍🏫</b></li>{% for student in enrolled_students %}<li style="padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">{{ student.full_name }}<span id="m-focus-{{ student.id }}" style="width:10px;height:10px;border-radius:50%;background:var(--vc-success);"></span></li>{% endfor %}</ul></div>
+    <div id="mForumView" class="mobile-fullscreen-section"><div class="mfs-header"><h5>{{ "المنتدى" if lang=="ar" else "Forum" }}</h5><button class="mfs-close" onclick="closeMobileView()">&times;</button></div><form action="{{ url_for('add_forum_post',course_id=course.id) }}" method="POST" style="margin-bottom:15px;background:#f8f9fa;padding:15px;border-radius:12px;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="text" name="title" class="form-control mb-2" placeholder="{{ 'عنوان' if lang=='ar' else 'Title' }}" required><textarea name="content" class="form-control mb-2" rows="2" placeholder="{{ 'المحتوى' if lang=='ar' else 'Content' }}" required></textarea><button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-plus"></i> {{ "نشر" if lang=="ar" else "Post" }}</button></form><div style="flex:1;overflow-y:auto;">{% for post in posts %}<div style="background:white;border:1px solid #ddd;border-radius:8px;padding:10px;margin-bottom:10px;"><strong>{{ post.title }}</strong><p style="margin:5px 0 0 0;font-size:0.85em;">{{ post.content[:80] }}</p></div>{% endfor %}</div></div>
+    <div id="mArchiveView" class="mobile-fullscreen-section"><div class="mfs-header"><h5>{{ "الأرشيف" if lang=="ar" else "Archive" }}</h5><button class="mfs-close" onclick="closeMobileView()">&times;</button></div><div style="flex:1;overflow-y:auto;">{% if sessions|length > 0 %}{% for s in sessions %}<div class="archive-item"><div><span class="archive-item-title">{{ s.title }}</span><br><span class="archive-item-time" dir="ltr">{{ s.start_time.strftime('%Y-%m-%d %H:%M') }}</span></div>{% if s.status=='live' %}<span class="session-status-tag tag-live">مباشر</span>{% elif s.status=='finished' %}<span class="session-status-tag tag-finished">انتهت</span>{% else %}<span class="session-status-tag tag-upcoming">قادمة</span>{% endif %}</div>{% endfor %}{% endif %}</div></div>
+</div>
+
+<div id="helpModal" class="modal-overlay"><div class="help-modal-box"><div class="help-modal-header"><span style="font-weight:bold;font-size:0.95em;"><i class="fas fa-video"></i> {{ "تفعيل الكاميرا والصوت" if lang=="ar" else "Camera & Mic" }}</span><button onclick="document.getElementById('helpModal').style.display='none'" style="background:none;border:none;color:white;font-size:1.5em;cursor:pointer;">&times;</button></div><div class="help-modal-body"><div class="help-mini-step"><b style="color:var(--vc-primary);"><i class="fas fa-laptop"></i> كمبيوتر:</b><br>1. اضغط "سماح" أعلى الشاشة.<br>2. اضغط أيقونة القفل 🔒 واسمح بالوصول.</div><div class="help-mini-step mobile-step"><b style="color:#2e7d32;"><i class="fas fa-mobile-alt"></i> أندرويد:</b><br>1. اضغط "سماح".<br>2. إعدادات > Apps > Chrome > Permissions > فعّل Camera و Microphone.</div><div class="help-mini-step mobile-step" style="border-right-color:#333;"><b style="color:#000;"><i class="fab fa-apple"></i> آيفون:</b><br>1. اضغط "سماح" في Safari.<br>2. الإعدادات > Safari > الكاميرا والميكروفون.<br>3. استخدم Safari فقط.</div></div><div style="padding:10px 15px;border-top:1px solid #eee;text-align:center;"><button onclick="document.getElementById('helpModal').style.display='none'" class="btn btn-primary btn-sm" style="border-radius:20px;padding:5px 30px;"><i class="fas fa-check"></i> {{ "فهمت" if lang=="ar" else "OK" }}</button></div></div></div>
+
+{% if current_user.is_teacher or current_user.is_admin %}
+<div id="scheduleModal" class="modal-overlay"><div class="schedule-modal-box"><div class="schedule-modal-header"><h4><i class="fas fa-calendar-plus"></i> {{ "تحديد موعد الجلسة" if lang=="ar" else "Schedule Session" }}</h4><button class="schedule-modal-close" onclick="closeScheduleModal()">&times;</button></div><div class="schedule-modal-body"><form action="{{ url_for('schedule_session',course_id=course.id) }}" method="POST" id="scheduleForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><div class="schedule-field"><label><i class="fas fa-heading"></i> {{ "عنوان الجلسة" if lang=="ar" else "Title" }}</label><input type="text" name="session_title" placeholder="{{ 'مثال: محاضرة الباب الثالث' if lang=='ar' else 'e.g. Chapter 3' }}"></div><div class="schedule-field"><label><i class="fas fa-play-circle"></i> {{ "وقت البدء" if lang=="ar" else "Start" }}</label><input type="datetime-local" name="start_time" id="scheduleStart" required></div><div class="schedule-field"><label><i class="fas fa-stop-circle"></i> {{ "وقت الانتهاء" if lang=="ar" else "End" }}</label><input type="datetime-local" name="end_time" id="scheduleEnd" required></div><button type="submit" class="schedule-submit-btn"><i class="fas fa-calendar-check"></i> {{ "حفظ الموعد وإعلام الطلاب" if lang=="ar" else "Save & Notify" }}</button></form></div></div></div>
+{% endif %}
+
+<script>
+    var courseId = {{ course.id }};
+    var isTeacher = {{ 'true' if current_user.is_teacher or current_user.is_admin else 'false' }};
+    var lang = "{{ lang }}";
+    var t = function(ar, en) { return lang === 'ar' ? ar : en; };
+
+    // ==========================================
+    // بيانات الجلسة
+    // ==========================================
+    var sessionData = {
+        {% if next_session %}
+        exists: true, id: {{ next_session.id }},
+        title: "{{ next_session.title | replace('"', '\\"') }}",
+        status: "{{ next_session.status }}",
+        startStr: "{{ next_session_start_str }}",
+        endStr: "{{ next_session_end_str }}"
+        {% else %}
+        exists: false
+        {% endif %}
+    };
+
+    function parseLocalDate(str) {
+        if (!str) return null;
+        var parts = str.split('T'), dp = parts[0].split('-'), tp = parts[1].split(':');
+        return new Date(parseInt(dp[0]), parseInt(dp[1])-1, parseInt(dp[2]), parseInt(tp[0]), parseInt(tp[1]), parseInt(tp[2]||0));
+    }
+
+    // ==========================================
+    // شريط موعد الجلسة
+    // ==========================================
+    var sessionBar = document.getElementById('sessionBar');
+    var sessionBadge = document.getElementById('sessionBadge');
+    var sessionBadgeText = document.getElementById('sessionBadgeText');
+    var sessionTitleEl = document.getElementById('sessionTitle');
+    var sessionDateEl = document.getElementById('sessionDate').querySelector('span');
+    var sessionTimeEl = document.getElementById('sessionTimeRange').querySelector('span');
+    var timerLabel = document.getElementById('timerLabel');
+    var timerValue = document.getElementById('timerValue');
+    var sessionBarDismissed = false;
+
+    function updateSessionBar() {
+        if (!sessionData.exists || sessionBarDismissed) { sessionBar.classList.remove('visible'); return; }
+        sessionBar.classList.add('visible');
+        sessionTitleEl.textContent = sessionData.title;
+        var startDate = parseLocalDate(sessionData.startStr);
+        var endDate = parseLocalDate(sessionData.endStr);
+        var now = new Date();
+        if (!startDate || !endDate) return;
+        sessionDateEl.textContent = startDate.toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{weekday:'long',year:'numeric',month:'short',day:'numeric'});
+        sessionTimeEl.textContent = startDate.toLocaleTimeString(lang==='ar'?'ar-SA':'en-US',{hour:'2-digit',minute:'2-digit'}) + ' - ' + endDate.toLocaleTimeString(lang==='ar'?'ar-SA':'en-US',{hour:'2-digit',minute:'2-digit'});
+        if (sessionData.status === 'live') {
+            sessionBar.className = 'session-schedule-bar visible live';
+            sessionBadge.className = 'session-status-badge live-badge';
+            sessionBadgeText.textContent = t('مباشر الآن','LIVE');
+            sessionBadge.querySelector('i').className = 'fas fa-broadcast-tower';
+            timerLabel.textContent = t('مدة البث','On Air');
+            timerValue.textContent = formatDuration(now - startDate);
+        } else if (sessionData.status === 'upcoming') {
+            var diff = startDate - now;
+            if (diff <= 0) { sessionData.status = 'live'; updateSessionBar(); return; }
+            sessionBar.className = 'session-schedule-bar visible upcoming';
+            if (diff <= 5*60*1000) { sessionBar.classList.add('almost-live'); sessionBadge.className = 'session-status-badge live-badge'; sessionBadgeText.textContent = t('تبدأ قريباً!','Soon!'); sessionBadge.querySelector('i').className = 'fas fa-bell'; }
+            else { sessionBadge.className = 'session-status-badge upcoming-badge'; sessionBadgeText.textContent = t('قادمة','Upcoming'); sessionBadge.querySelector('i').className = 'fas fa-clock'; }
+            timerLabel.textContent = t('تبدأ بعد','Starts in');
+            timerValue.textContent = formatDuration(diff);
+        }
+    }
+    function formatDuration(ms) { var ts=Math.abs(Math.floor(ms/1000)),h=Math.floor(ts/3600),m=Math.floor((ts%3600)/60),s=ts%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+    function dismissSessionBar() { sessionBarDismissed = true; sessionBar.classList.remove('visible'); }
+    setInterval(updateSessionBar, 1000); updateSessionBar();
+
+    function openScheduleModal() { document.getElementById('scheduleModal').style.display='flex'; var now=new Date(),later=new Date(now.getTime()+90*60000); document.getElementById('scheduleStart').value=toLocalISOString(now); document.getElementById('scheduleEnd').value=toLocalISOString(later); }
+    function closeScheduleModal() { document.getElementById('scheduleModal').style.display='none'; }
+    function toLocalISOString(d) { var o=d.getTimezoneOffset(),l=new Date(d.getTime()-o*60000); return l.toISOString().slice(0,16); }
+
+    function showMobileView(v,b) { document.querySelectorAll('.mobile-fullscreen-section').forEach(function(e){e.style.display='none';}); if(v!=='board')document.getElementById(v+'View').style.display='flex'; document.querySelectorAll('.mob-nav-btn').forEach(function(e){e.classList.remove('active');}); if(b)b.classList.add('active'); }
+    function closeMobileView() { document.querySelectorAll('.mobile-fullscreen-section').forEach(function(e){e.style.display='none';}); document.querySelectorAll('.mob-nav-btn').forEach(function(e){e.classList.remove('active');}); document.querySelector('.mob-nav-btn:first-child').classList.add('active'); }
+
+    // ==========================================
+    // 🌟 السبورة - كود مشترك للمدرس والطالب
+    // ==========================================
+    var canvas = document.getElementById('whiteboard');
+    var ctx = canvas.getContext('2d');
+    var pdfFrame = document.getElementById('pdfFrame');
+    var wrapper = document.getElementById('whiteboard-wrapper');
+    var boardSyncDot = document.getElementById('boardSyncDot');
+    var lastStrokeId = 0;
+    var syncErrors = 0;
+    var hasFileLoaded = false;
+    var clearState = 0;
+    var isAnnotateMode = true;
+
+    function resizeCanvas() {
+        var rect = wrapper.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        var tmp = document.createElement('canvas');
+        tmp.width = canvas.width; tmp.height = canvas.height;
+        tmp.getContext('2d').drawImage(canvas, 0, 0);
+        canvas.width = rect.width * 2; canvas.height = rect.height * 2;
+        ctx.scale(2, 2); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.drawImage(tmp, 0, 0, tmp.width / 2, tmp.height / 2);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', function() { resizeCanvas(); fetchNewStrokes(); });
+
+    // 🌟🌟🌟 دالة عرض الملف - مشتركة 🌟🌟🌟
+    function loadFileOnBoard(fileUrl, isPdf) {
+        hasFileLoaded = true; clearState = 0; wrapper.classList.add('has-file');
+        if (isPdf) {
+            pdfFrame.src = fileUrl; pdfFrame.style.display = 'block';
+            if (!isTeacher) { canvas.style.zIndex='2'; canvas.style.pointerEvents='none'; pdfFrame.style.zIndex='1'; }
+            else { setAnnotateMode(); var a=document.getElementById('annotateModeBtn'),r=document.getElementById('readModeBtn'); if(a)a.style.display='inline-block'; if(r)r.style.display='inline-block'; }
+        } else {
+            pdfFrame.style.display = 'none';
+            var img = new Image();
+            img.onload = function() { ctx.globalCompositeOperation='source-over'; ctx.drawImage(img,0,0,canvas.width/2,canvas.height/2); };
+            img.src = fileUrl;
+        }
+    }
+
+    // 🌟🌟🌟 دالة رسم الضربة - مشتركة مع حماية 🌟🌟🌟
+    function renderStroke(stroke) {
+        try {
+            if (stroke.tool === 'clear_annotations') { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+            if (stroke.tool === 'clear_all') {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                pdfFrame.style.display='none'; wrapper.classList.remove('has-file'); hasFileLoaded=false;
+                var a=document.getElementById('annotateModeBtn'),r=document.getElementById('readModeBtn');
+                if(a)a.style.display='none'; if(r)r.style.display='none';
+                return;
+            }
+            if (stroke.tool === 'upload') { loadFileOnBoard(stroke.file_url, stroke.is_pdf); return; }
+            if (stroke.tool === 'text') {
+                ctx.globalCompositeOperation='source-over';
+                ctx.font='bold '+(stroke.width*4+16)+'px Cairo';
+                ctx.fillStyle=stroke.color||'#000000';
+                ctx.fillText(stroke.text, stroke.x, stroke.y);
+                return;
+            }
+            ctx.globalCompositeOperation=(stroke.tool==='eraser')?'destination-out':'source-over';
+            ctx.strokeStyle=stroke.color||'#000000';
+            ctx.lineWidth=stroke.width||2;
+            ctx.fillStyle=stroke.color||'#000000';
+            if (stroke.tool==='pen'||stroke.tool==='marker'||stroke.tool==='eraser') {
+                if (stroke.path&&stroke.path.length>0) {
+                    ctx.beginPath(); ctx.moveTo(stroke.path[0].x,stroke.path[0].y);
+                    for(var i=1;i<stroke.path.length;i++) ctx.lineTo(stroke.path[i].x,stroke.path[i].y);
+                    ctx.stroke();
+                }
+            } else if (stroke.tool==='rect'&&stroke.endX!==undefined) {
+                ctx.strokeRect(stroke.startX,stroke.startY,stroke.endX-stroke.startX,stroke.endY-stroke.startY);
+            } else if (stroke.tool==='circle'&&stroke.endX!==undefined) {
+                ctx.beginPath(); ctx.arc(stroke.startX,stroke.startY,Math.sqrt(Math.pow(stroke.endX-stroke.startX,2)+Math.pow(stroke.endY-stroke.startY,2)),0,Math.PI*2); ctx.stroke();
+            } else if (stroke.tool==='line'&&stroke.endX!==undefined) {
+                ctx.beginPath(); ctx.moveTo(stroke.startX,stroke.startY); ctx.lineTo(stroke.endX,stroke.endY); ctx.stroke();
+            }
+        } catch(err) { console.error('renderStroke error:', err, stroke); }
+    }
+
+    // 🌟🌟🌟 جلب الضربات - مشترك مع تصحيح last_id 🌟🌟🌟
+    function fetchNewStrokes() {
+        fetch('/course/'+courseId+'/class/get-strokes?last_id='+lastStrokeId)
+            .then(function(res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function(data) {
+                syncErrors = 0;
+                if (boardSyncDot) boardSyncDot.style.background='var(--vc-success)';
+                var st = document.getElementById('syncText'); if(st) st.textContent=t('متصل','Connected');
+
+                if (data.strokes && data.strokes.length > 0) {
+                    console.log('[Sync] Received', data.strokes.length, 'strokes, last_id:', data.last_id);
+                    for (var i = 0; i < data.strokes.length; i++) { renderStroke(data.strokes[i]); }
+                    // 🌟 تصحيح: التأكد من أن last_id رقم صحيح
+                    if (data.last_id && typeof data.last_id === 'number' && data.last_id > lastStrokeId) {
+                        lastStrokeId = data.last_id;
+                    }
+                }
+
+                if (data.session) {
+                    var changed = !sessionData.exists || sessionData.id!==data.session.id || sessionData.status!==data.session.status;
+                    sessionData = {exists:true,id:data.session.id,title:data.session.title,status:data.session.status,startStr:data.session.start_str,endStr:data.session.end_str};
+                    if (changed) { sessionBarDismissed=false; updateSessionBar(); }
+                } else if (sessionData.exists) { sessionData.exists=false; updateSessionBar(); }
+            })
+            .catch(function(err) {
+                syncErrors++;
+                console.error('[Sync] Error:', err);
+                if (syncErrors>3) { if(boardSyncDot)boardSyncDot.style.background='var(--vc-live)'; var st=document.getElementById('syncText'); if(st)st.textContent=t('إعادة الاتصال...','Reconnecting...'); }
+            });
+    }
+
+    setInterval(fetchNewStrokes, 800);
+
+    // تمرير الملف بالماوس
+    wrapper.addEventListener('wheel', function(e) { if(hasFileLoaded&&pdfFrame.style.display!=='none'){try{pdfFrame.contentWindow.scrollBy(0,e.deltaY);e.preventDefault();}catch(err){}} }, {passive:false});
+
+    function saveCanvas() { var l=document.createElement('a'); l.download='whiteboard_'+courseId+'.png'; l.href=canvas.toDataURL(); l.click(); }
+
+    {% if current_user.is_teacher or current_user.is_admin %}
+    // ==========================================
+    // أدوات الرسم - للمدرس فقط
+    // ==========================================
+    var textInput = document.getElementById('textToolInput');
+    var clearBtn = document.getElementById('clearBtn');
+    var isDrawing = false, currentTool = 'pen', currentColor = '#000000', currentWidth = 2;
+    var startX, startY, snapshot, currentPath = [];
+
+    function setTool(tool, width) { if(width===undefined)width=2; currentTool=tool; currentWidth=width; canvas.style.cursor=tool==='eraser'?'grab':tool==='text'?'text':'crosshair'; if(textInput)textInput.style.display=tool==='text'?'inline-block':'none'; }
+    var cp=document.getElementById('colorPicker'); if(cp)cp.addEventListener('input',function(e){currentColor=e.target.value;});
+
+    function getPos(e) { var r=canvas.getBoundingClientRect(),cx,cy; if(e.touches&&e.touches.length>0){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else{cx=e.clientX;cy=e.clientY;} return{x:cx-r.left,y:cy-r.top}; }
+
+    canvas.addEventListener('mousedown',startDraw); canvas.addEventListener('mousemove',draw); canvas.addEventListener('mouseup',endDraw); canvas.addEventListener('mouseleave',endDraw);
+    canvas.addEventListener('touchstart',function(e){e.preventDefault();startDraw(e);},{passive:false});
+    canvas.addEventListener('touchmove',function(e){e.preventDefault();draw(e);},{passive:false});
+    canvas.addEventListener('touchend',function(e){e.preventDefault();endDraw(e);});
+
+    function startDraw(e) {
+        if(!isAnnotateMode)return;
+        var pos=getPos(e); startX=pos.x; startY=pos.y;
+        if(currentTool==='text'){var txt=textInput?textInput.value.trim():''; if(txt){ctx.globalCompositeOperation='source-over';ctx.font='bold '+(currentWidth*4+16)+'px Cairo';ctx.fillStyle=currentColor;ctx.fillText(txt,startX,startY);saveStrokeToDb({tool:'text',text:txt,x:startX,y:startY,color:currentColor,width:currentWidth});if(textInput)textInput.value='';}return;}
+        isDrawing=true; currentPath=[{x:startX,y:startY}];
+        if(currentTool==='rect'||currentTool==='circle'||currentTool==='line')snapshot=ctx.getImageData(0,0,canvas.width,canvas.height);
+        ctx.beginPath(); ctx.moveTo(startX,startY);
+    }
+    function draw(e) {
+        if(!isDrawing||!isAnnotateMode)return;
+        var pos=getPos(e),x=pos.x,y=pos.y;
+        if(currentTool==='pen'||currentTool==='marker'){ctx.strokeStyle=currentColor;ctx.lineWidth=currentWidth;ctx.globalCompositeOperation='source-over';ctx.lineTo(x,y);ctx.stroke();currentPath.push({x:x,y:y});}
+        else if(currentTool==='eraser'){ctx.globalCompositeOperation='destination-out';ctx.lineWidth=20;ctx.lineTo(x,y);ctx.stroke();currentPath.push({x:x,y:y});}
+        else if(currentTool==='rect'||currentTool==='circle'||currentTool==='line'){ctx.putImageData(snapshot,0,0);ctx.strokeStyle=currentColor;ctx.lineWidth=currentWidth;ctx.globalCompositeOperation='source-over';if(currentTool==='rect')ctx.strokeRect(startX,startY,x-startX,y-startY);else if(currentTool==='circle'){ctx.beginPath();ctx.arc(startX,startY,Math.sqrt(Math.pow(x-startX,2)+Math.pow(y-startY,2)),0,Math.PI*2);ctx.stroke();}else if(currentTool==='line'){ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(x,y);ctx.stroke();}}
+    }
+    function endDraw(e) {
+        if(!isDrawing)return; isDrawing=false; ctx.beginPath();
+        var sd={tool:currentTool,color:currentColor,width:currentWidth,startX:startX,startY:startY,path:currentPath};
+        if(currentTool==='rect'||currentTool==='circle'||currentTool==='line'){var ep;if(e.changedTouches&&e.changedTouches.length>0){var r=canvas.getBoundingClientRect();ep={x:e.changedTouches[0].clientX-r.left,y:e.changedTouches[0].clientY-r.top};}else if(e.clientX!==undefined){var r2=canvas.getBoundingClientRect();ep={x:e.clientX-r2.left,y:e.clientY-r2.top};}else{ep={x:startX,y:startY};}sd.endX=ep.x;sd.endY=ep.y;}
+        saveStrokeToDb(sd); currentPath=[];
+    }
+
+    function saveStrokeToDb(stroke) {
+        if(clearState===1&&stroke.tool!=='clear_annotations'&&stroke.tool!=='clear_all'){clearState=0;updateClearBtnStyle();}
+        fetch('/course/'+courseId+'/class/save-stroke',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify({stroke:stroke})})
+        .then(function(res){return res.json();}).then(function(d){if(d.success){lastStrokeId=d.id;syncErrors=0;if(boardSyncDot)boardSyncDot.style.background='var(--vc-success)';}}).catch(function(){syncErrors++;});
+    }
+
+    // 🌟 الحذف الذكي - بدون مسح قاعدة البيانات!
+    function clearCanvasAndDb() {
+        if (clearState === 0 && hasFileLoaded) {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            saveStrokeToDb({tool:'clear_annotations'});
+            clearState = 1; updateClearBtnStyle();
+        } else {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            pdfFrame.style.display='none'; wrapper.classList.remove('has-file'); hasFileLoaded=false;
+            clearState = 0; updateClearBtnStyle();
+            var a=document.getElementById('annotateModeBtn'),r=document.getElementById('readModeBtn');
+            if(a)a.style.display='none'; if(r)r.style.display='none';
+            // 🌟🌟🌟 حفظ علامة المسح فقط بدون حذف قاعدة البيانات 🌟🌟🌟
+            saveStrokeToDb({tool:'clear_all'});
+            // 🌟 تنظيف الضربات القديمة في الخلفية (لا يمسح الجديدة)
+            fetch('/course/'+courseId+'/class/clear-board-db',{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token() }}'}});
+        }
+    }
+    function updateClearBtnStyle() { if(!clearBtn)return; if(clearState===1){clearBtn.style.background='#ff5722';clearBtn.style.animation='syncPulse 1s infinite';clearBtn.title=t('اضغط مرة أخرى لحذف الملف','Click again to remove file');}else{clearBtn.style.background='';clearBtn.style.animation='';clearBtn.title=t('مسح الرسم','Clear');} }
+
+    function handleBoardUpload(event) { var f=event.target.files[0]; if(!f)return; var fd=new FormData(); fd.append('board_file',f); fd.append('csrf_token','{{ csrf_token() }}'); fetch('{{ url_for("upload_board_file",course_id=course.id) }}',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.success){var u=d.file_url,p=u.toLowerCase().endsWith('.pdf');saveStrokeToDb({tool:'upload',file_url:u,is_pdf:p});loadFileOnBoard(u,p);}}); event.target.value=''; }
+
+    function setAnnotateMode() { isAnnotateMode=true; canvas.style.zIndex='3'; canvas.style.pointerEvents='auto'; pdfFrame.style.zIndex='2'; pdfFrame.style.pointerEvents='none'; canvas.style.cursor='crosshair'; var a=document.getElementById('annotateModeBtn'),r=document.getElementById('readModeBtn'); if(a){a.classList.remove('btn-outline-success');a.classList.add('btn-success');} if(r){r.classList.remove('btn-warning');r.classList.add('btn-outline-warning');} }
+    function toggleReadMode() { isAnnotateMode=false; canvas.style.zIndex='2'; canvas.style.pointerEvents='none'; pdfFrame.style.zIndex='3'; pdfFrame.style.pointerEvents='auto'; canvas.style.cursor='default'; var a=document.getElementById('annotateModeBtn'),r=document.getElementById('readModeBtn'); if(a){a.classList.remove('btn-success');a.classList.add('btn-outline-success');} if(r){r.classList.remove('btn-outline-warning');r.classList.add('btn-warning');} }
+    function toggleAnnotateMode() { if(isAnnotateMode)toggleReadMode();else setAnnotateMode(); }
+    {% endif %}
+
+    // ==========================================
+    // بث الفيديو
+    // ==========================================
+    var jitsiScriptLoaded=false;
+    function loadJitsiScript(cb){if(jitsiScriptLoaded){cb();return;}var s=document.createElement('script');s.src='https://meet.jit.si/external_api.js';s.onload=function(){jitsiScriptLoaded=true;cb();};document.head.appendChild(s);}
+    var api=null,isLive=false;
+    function toggleVideo(){var vs=document.getElementById('videoSection'),bc=document.getElementById('boardContainer'),bv=document.getElementById('btnVideo'),fb=document.getElementById('videoFullscreenBtn');if(!isLive){loadJitsiScript(function(){bc.style.display='none';vs.style.display='block';fb.style.display='block';bv.innerHTML='<i class="fas fa-video-slash"></i> '+t('إيقاف','Stop');bv.className='btn btn-secondary btn-sm';setTimeout(function(){var o={roomName:'AlJazeeraUni_Course_'+courseId,width:'100%',height:'100%',parentNode:document.getElementById('jitsi-container'),configOverwrite:{startWithAudioMuted:false,startWithVideoMuted:false,prejoinPageEnabled:true},interfaceConfigOverwrite:{TOOLBAR_BUTTONS:['microphone','camera','desktop','fullscreen','raisehand','settings','hangup'],TOOLBAR_ALWAYS_VISIBLE:true}};api=new JitsiMeetExternalAPI('meet.jit.si',o);isLive=true;},100);});}else{if(api)api.dispose();vs.style.display='none';fb.style.display='none';bc.style.display='flex';bv.innerHTML='<i class="fas fa-video"></i> '+t('بث','Live');bv.className='btn btn-danger btn-sm';isLive=false;resizeCanvas();}}
+    function toggleVideoFullscreen(){var vs=document.getElementById('videoSection');if(!document.fullscreenElement){if(vs.requestFullscreen)vs.requestFullscreen();else if(vs.webkitRequestFullscreen)vs.webkitRequestFullscreen();}else{if(document.exitFullscreen)document.exitFullscreen();}}
+    function toggleSidebar(){document.getElementById('vcSidebar').classList.toggle('collapsed');setTimeout(resizeCanvas,300);}
+    function switchTab(t,b){document.querySelectorAll('.vc-tab-content').forEach(function(e){e.classList.remove('active');});document.querySelectorAll('.vc-tab-btn').forEach(function(e){e.classList.remove('active');});document.getElementById(t+'Section').classList.add('active');b.classList.add('active');}
+
+    {% if current_user.is_student %}
+    document.addEventListener('visibilitychange',function(){fetch('{{ url_for("track_focus",course_id=course.id) }}',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token() }}'},body:JSON.stringify({focused:document.visibilityState==='visible'})});});
+    {% endif %}
+    {% if current_user.is_teacher or current_user.is_admin %}
+    setInterval(function(){fetch('{{ url_for("get_focus_statuses",course_id=course.id) }}').then(function(r){return r.json();}).then(function(s){ {% for student in enrolled_students %}var d=document.getElementById('focus-{{ student.id }}'),m=document.getElementById('m-focus-{{ student.id }}'),c=s['{{ student.id }}']==='unfocused'?'#e74c3c':'var(--vc-success)';if(d)d.style.background=c;if(m)m.style.background=c;{% endfor %}});},3000);
+    {% endif %}
+
+    setTimeout(function(){var c=document.getElementById('chatMessages'),m=document.getElementById('mChatMessages');if(c)c.scrollTop=c.scrollHeight;if(m)m.scrollTop=m.scrollHeight;},500);
+</script>
+{% endblock %}
