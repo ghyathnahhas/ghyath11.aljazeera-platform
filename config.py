@@ -16,8 +16,8 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
-        'pool_size': 5,        # زيادة حجم الاتصالات لاستيعاب الآلاف
-        'max_overflow': 10      # سماح باتصالات إضافية عند الضغط القصوى
+        'pool_size': 1,        # زيادة حجم الاتصالات لاستيعاب الآلاف
+        'max_overflow': 2,      # سماح باتصالات إضافية عند الضغط القصوى
     }
 
     UPLOAD_FOLDER = os.path.join(basedir, 'static', 'uploads')
