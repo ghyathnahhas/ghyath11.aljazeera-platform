@@ -63,12 +63,6 @@ def set_security_headers(response):
 
 db.init_app(app)
 
-with app.app_context():
-    try:
-        result = db.session.execute(db.text('PRAGMA journal_mode=WAL')).scalar()
-        print(f"Database WAL mode enabled: {result}")
-    except Exception as e:
-        print(f"Could not set WAL mode: {e}")
 
 app.jinja_env.globals['now'] = datetime.now
 app.jinja_env.globals['timedelta'] = timedelta
