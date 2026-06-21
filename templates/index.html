@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ "الرئيسية - جامعة الجزيرة الخاصة" if lang == "ar" else "Home - AlJazeera Private University" }}{% endblock %}
+{% block content %}
+<section class="hero-section">
+    <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+    </div>
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1 class="hero-title animated-title">
+                <span class="title-line">{{ "مرحبا بكم في" if lang == "ar" else "Welcome to" }}</span>
+                <span class="title-highlight">{{ "جامعة الجزيرة الخاصة" if lang == "ar" else "AlJazeera Private University" }}</span>
+            </h1>
+            <p class="hero-desc">{{ "منصة تعليمية متطورة تجمع بين التكنولوجيا الحديثة والذكاء الاصطناعي لتقديم تجربة تعليمية استثنائية" if lang == "ar" else "An advanced educational platform combining modern technology and AI for an exceptional learning experience" }}</p>
+            <div class="hero-buttons">
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for("login") }}" class="btn btn-primary btn-3d btn-lg"><i class="fas fa-sign-in-alt"></i> {{ "تسجيل الدخول" if lang == "ar" else "Login" }}</a>
+                {% endif %}
+                <a href="#colleges-section" class="btn btn-outline btn-3d btn-lg"><i class="fas fa-university"></i> {{ "استكشف الكليات" if lang == "ar" else "Explore Colleges" }}</a>
+            </div>
+        </div>
+        <div class="hero-3d-illustration">
+            <div class="floating-card card-1"><i class="fas fa-book-open"></i><span>{{ "تعلم تفاعلي" if lang == "ar" else "Interactive Learning" }}</span></div>
+            <div class="floating-card card-2"><i class="fas fa-laptop-code"></i><span>{{ "تكنولوجيا حديثة" if lang == "ar" else "Modern Tech" }}</span></div>
+            <div class="floating-card card-3"><i class="fas fa-flask"></i><span>{{ "مختبرات افتراضية" if lang == "ar" else "Virtual Labs" }}</span></div>
+            <div class="floating-card card-4"><i class="fas fa-brain"></i><span>{{ "ذكاء اصطناعي" if lang == "ar" else "AI Powered" }}</span></div>
+            <div class="floating-card card-5"><i class="fas fa-globe"></i><span>{{ "تعلم عن بعد" if lang == "ar" else "E-Learning" }}</span></div>
+            <div class="hero-center-icon"><i class="fas fa-graduation-cap"></i></div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-bar">
+    <div class="stats-container">
+        <div class="stat-item stat-3d">
+            <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-number" data-count="{{ total_students }}">0</div>
+            <div class="stat-label">{{ "طالب مسجل" if lang == "ar" else "Students" }}</div>
+        </div>
+        <div class="stat-item stat-3d">
+            <div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="stat-number" data-count="{{ total_teachers }}">0</div>
+            <div class="stat-label">{{ "مدرس" if lang == "ar" else "Teachers" }}</div>
+        </div>
+        <div class="stat-item stat-3d">
+            <div class="stat-icon"><i class="fas fa-book"></i></div>
+            <div class="stat-number" data-count="{{ total_courses }}">0</div>
+            <div class="stat-label">{{ "مقرر دراسي" if lang == "ar" else "Courses" }}</div>
+        </div>
+        <div class="stat-item stat-3d">
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+            <div class="stat-number" data-count="{{ colleges|length }}">0</div>
+            <div class="stat-label">{{ "كلية وقسم" if lang == "ar" else "Colleges" }}</div>
+        </div>
+    </div>
+</section>
+
+<section class="colleges-section" id="colleges-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-university"></i> {{ "الكليات والأقسام" if lang == "ar" else "Colleges & Departments" }}</h2>
+        <p class="section-desc">{{ "استكشف كلياتنا المتنوعة وأقسامها المتخصصة" if lang == "ar" else "Explore our diverse colleges and specialized departments" }}</p>
+    </div>
+    <div class="colleges-grid">
+        {% for college in colleges %}
+        <div class="college-card card-3d" onclick="window.location.href='{{ url_for("college_detail", id=college.id) }}'">
+            <div class="card-glow"></div>
+            <div class="card-icon">
+                {% if "صيدلة" in college.name %}<i class="fas fa-pills"></i>
+                {% elif "هندسة" in college.name %}<i class="fas fa-drafting-compass"></i>
+                {% elif "إدارة" in college.name %}<i class="fas fa-chart-pie"></i>
+                {% else %}<i class="fas fa-book-reader"></i>{% endif %}
+            </div>
+            <h3 class="card-title">{{ college.name if lang == "ar" else (college.name_en or college.name) }}</h3>
+            <p class="card-desc">{{ college.description or "" }}</p>
+            <div class="card-footer-info">
+                <span><i class="fas fa-sitemap"></i> {{ college.children.count() }} {{ "قسم" if lang == "ar" else "Dept." }}</span>
+                <span class="card-link"><i class="fas fa-arrow-left"></i></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-rocket"></i> {{ "مميزات المنصة" if lang == "ar" else "Platform Features" }}</h2>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-brain"></i></div>
+            <h3>{{ "ذكاء اصطناعي" if lang == "ar" else "AI Technology" }}</h3>
+            <p>{{ "توليد أسئلة تلقائية وتقييم ذكي للطلاب" if lang == "ar" else "Auto question generation and smart student evaluation" }}</p>
+        </div>
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+            <h3>{{ "حفظ سحابي" if lang == "ar" else "Cloud Backup" }}</h3>
+            <p>{{ "نسخ احتياطي تلقائي مستمر لجميع البيانات" if lang == "ar" else "Continuous automatic backup for all data" }}</p>
+        </div>
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+            <h3>{{ "أمن سيبراني" if lang == "ar" else "Cyber Security" }}</h3>
+            <p>{{ "حماية متقدمة للبيانات والخصوصية" if lang == "ar" else "Advanced data protection and privacy" }}</p>
+        </div>
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-language"></i></div>
+            <h3>{{ "ثنائي اللغة" if lang == "ar" else "Bilingual" }}</h3>
+            <p>{{ "دعم كامل للعربية والإنجليزية" if lang == "ar" else "Full Arabic and English support" }}</p>
+        </div>
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-video"></i></div>
+            <h3>{{ "محاضرات متعددة" if lang == "ar" else "Multi-format" }}</h3>
+            <p>{{ "دعم بوربوينت وفيديو وصوت وPDF" if lang == "ar" else "Support PPT, video, audio, PDF" }}</p>
+        </div>
+        <div class="feature-card card-3d">
+            <div class="feature-icon"><i class="fas fa-trophy"></i></div>
+            <h3>{{ "جوائز ومكافآت" if lang == "ar" else "Rewards" }}</h3>
+            <p>{{ "نظام تحفيز متقدم للطلاب المتفوقين" if lang == "ar" else "Advanced motivation system for top students" }}</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
